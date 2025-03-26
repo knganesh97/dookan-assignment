@@ -1,8 +1,8 @@
-from flask import Blueprint, request, jsonify
-from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity, get_jwt
+from flask import Blueprint, request, jsonify, current_app
+from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
 from datetime import datetime, timezone
 from ..models.user import User
-from .. import db
+from bson import ObjectId
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -10,7 +10,8 @@ auth_bp = Blueprint('auth', __name__)
 def register():
     data = request.get_json()
     
-    if User.query.filter_by(email=data['email']).first():
+    # Check if user exists in MongoDB
+    if current_app.mongo.users.find_one({'email': data['email']}):
         return jsonify({'error': 'Email already registered'}), 400
     
     user = User(
@@ -19,12 +20,13 @@ def register():
     )
     user.set_password(data['password'])
     
-    db.session.add(user)
-    db.session.commit()
+    # Insert into MongoDB
+    result = current_app.mongo.users.insert_one(user.to_dict())
+    user._id = result.inserted_id
     
     # Generate tokens after successful registration
-    access_token = create_access_token(identity=user.id)
-    refresh_token = create_refresh_token(identity=user.id)
+    access_token = create_access_token(identity=str(user._id))
+    refresh_token = create_refresh_token(identity=str(user._id))
     
     return jsonify({
         'message': 'User registered successfully',
@@ -36,16 +38,25 @@ def register():
 @auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
-    user = User.query.filter_by(email=data['email']).first()
+    user_data = current_app.mongo.users.find_one({'email': data['email']})
     
-    if not user or not user.check_password(data['password']):
+    if not user_data:
         return jsonify({'error': 'Invalid credentials'}), 401
     
-    user.last_login = datetime.now(timezone.utc)
-    db.session.commit()
+    user = User.from_dict(user_data)
     
-    access_token = create_access_token(identity=user.id)
-    refresh_token = create_refresh_token(identity=user.id)
+    if not user.check_password(data['password']):
+        return jsonify({'error': 'Invalid credentials'}), 401
+    
+    # Update last login
+    user.last_login = datetime.now(timezone.utc)
+    current_app.mongo.users.update_one(
+        {'_id': user._id},
+        {'$set': {'last_login': user.last_login}}
+    )
+    
+    access_token = create_access_token(identity=str(user._id))
+    refresh_token = create_refresh_token(identity=str(user._id))
     
     return jsonify({
         'access_token': access_token,
@@ -64,28 +75,39 @@ def refresh():
 @jwt_required()
 def get_current_user():
     current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
+    user_data = current_app.mongo.users.find_one({'_id': ObjectId(current_user_id)})
     
-    if not user:
+    if not user_data:
         return jsonify({'error': 'User not found'}), 404
     
+    user = User.from_dict(user_data)
     return jsonify(user.to_dict())
 
 @auth_bp.route('/me', methods=['PUT'])
 @jwt_required()
 def update_current_user():
     current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
+    user_data = current_app.mongo.users.find_one({'_id': ObjectId(current_user_id)})
     
-    if not user:
+    if not user_data:
         return jsonify({'error': 'User not found'}), 404
     
+    user = User.from_dict(user_data)
     data = request.get_json()
     
+    update_fields = {}
     if 'name' in data:
-        user.name = data['name']
+        update_fields['name'] = data['name']
     if 'password' in data:
         user.set_password(data['password'])
+        update_fields['password_hash'] = user.password_hash
     
-    db.session.commit()
-    return jsonify(user.to_dict()) 
+    if update_fields:
+        current_app.mongo.users.update_one(
+            {'_id': user._id},
+            {'$set': update_fields}
+        )
+    
+    # Get updated user data
+    updated_user = User.from_dict(current_app.mongo.users.find_one({'_id': user._id}))
+    return jsonify(updated_user.to_dict()) 

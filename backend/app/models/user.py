@@ -10,6 +10,9 @@ class User:
         self.created_at = datetime.now(timezone.utc)
         self.last_login = None
     
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+    
     @staticmethod
     def from_dict(data):
         user = User(data['email'], '')  # Password will be set separately
