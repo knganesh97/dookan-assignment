@@ -1,7 +1,8 @@
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
-import json
+from ..models.event import Event
+from .. import db
 
 events_bp = Blueprint('events', __name__)
 
@@ -11,17 +12,18 @@ def create_event():
     user_id = get_jwt_identity()
     data = request.get_json()
     
-    event = {
-        'user_id': user_id,
-        'event_type': data['event_type'],
-        'description': data.get('description', ''),
-        'metadata': data.get('metadata', {}),
-        'created_at': datetime.utcnow(),
-        'ip_address': request.remote_addr,
-        'user_agent': request.user_agent.string
-    }
+    event = Event(
+        user_id=user_id,
+        event_type=data['event_type'],
+        description=data.get('description', ''),
+        metadata=data.get('metadata', {}),
+        ip_address=request.remote_addr,
+        user_agent=request.user_agent.string
+    )
     
-    current_app.mongo.events.insert_one(event)
+    db.session.add(event)
+    db.session.commit()
+    
     return jsonify({'message': 'Event logged successfully'}), 201
 
 @events_bp.route('/', methods=['GET'])
@@ -32,26 +34,17 @@ def get_events():
     per_page = int(request.args.get('per_page', 10))
     event_type = request.args.get('event_type')
     
-    query = {'user_id': user_id}
+    query = Event.query.filter_by(user_id=user_id)
     if event_type:
-        query['event_type'] = event_type
+        query = query.filter_by(event_type=event_type)
     
-    events = list(current_app.mongo.events
-                 .find(query)
-                 .sort('created_at', -1)
-                 .skip((page - 1) * per_page)
-                 .limit(per_page))
-    
-    # Convert ObjectId to string for JSON serialization
-    for event in events:
-        event['_id'] = str(event['_id'])
-        event['created_at'] = event['created_at'].isoformat()
-    
-    total = current_app.mongo.events.count_documents(query)
+    events = query.order_by(Event.created_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
     
     return jsonify({
-        'events': events,
-        'total': total,
+        'events': [event.to_dict() for event in events.items],
+        'total': events.total,
         'page': page,
         'per_page': per_page
     })
@@ -61,31 +54,27 @@ def get_events():
 def get_event_stats():
     user_id = get_jwt_identity()
     
-    pipeline = [
-        {'$match': {'user_id': user_id}},
-        {'$group': {
-            '_id': '$event_type',
-            'count': {'$sum': 1}
-        }}
-    ]
-    
-    stats = list(current_app.mongo.events.aggregate(pipeline))
+    # Get event type counts using SQLAlchemy
+    from sqlalchemy import func
+    stats = db.session.query(
+        Event.event_type,
+        func.count(Event.id).label('count')
+    ).filter_by(user_id=user_id).group_by(Event.event_type).all()
     
     return jsonify({
-        'stats': stats
+        'stats': [{'event_type': stat[0], 'count': stat[1]} for stat in stats]
     })
 
-@events_bp.route('/<event_id>', methods=['DELETE'])
+@events_bp.route('/<int:event_id>', methods=['DELETE'])
 @jwt_required()
 def delete_event(event_id):
     user_id = get_jwt_identity()
     
-    result = current_app.mongo.events.delete_one({
-        '_id': event_id,
-        'user_id': user_id
-    })
-    
-    if result.deleted_count == 0:
+    event = Event.query.filter_by(id=event_id, user_id=user_id).first()
+    if not event:
         return jsonify({'error': 'Event not found'}), 404
+    
+    db.session.delete(event)
+    db.session.commit()
     
     return jsonify({'message': 'Event deleted successfully'}) 

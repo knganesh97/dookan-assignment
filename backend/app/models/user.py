@@ -1,28 +1,37 @@
-from .. import db
-from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
+from bson import ObjectId
 
-class User(db.Model):
-    __tablename__ = 'users'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(256), nullable=False)
-    name = db.Column(db.String(100))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    last_login = db.Column(db.DateTime)
-    
-    def set_password(self, password):
+class User:
+    def __init__(self, email, password, name=None):
+        self.email = email
         self.password_hash = generate_password_hash(password)
+        self.name = name
+        self.created_at = datetime.utcnow()
+        self.last_login = None
+    
+    @staticmethod
+    def from_dict(data):
+        user = User(data['email'], '')  # Password will be set separately
+        user.password_hash = data['password_hash']
+        user.name = data.get('name')
+        user.created_at = data.get('created_at', datetime.utcnow())
+        user.last_login = data.get('last_login')
+        user._id = data.get('_id')
+        return user
+    
+    def to_dict(self):
+        return {
+            'email': self.email,
+            'password_hash': self.password_hash,
+            'name': self.name,
+            'created_at': self.created_at,
+            'last_login': self.last_login
+        }
     
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
     
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'email': self.email,
-            'name': self.name,
-            'created_at': self.created_at.isoformat(),
-            'last_login': self.last_login.isoformat() if self.last_login else None
-        } 
+    @property
+    def id(self):
+        return str(self._id) if hasattr(self, '_id') else None 

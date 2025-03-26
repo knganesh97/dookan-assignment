@@ -6,6 +6,9 @@ import plotly.express as px
 import plotly.graph_objects as go
 from io import BytesIO
 import base64
+from ..models.event import Event
+from .. import db
+from sqlalchemy import func
 
 analytics_bp = Blueprint('analytics', __name__)
 
@@ -66,21 +69,16 @@ def get_sales_trend():
 def get_event_distribution():
     user_id = get_jwt_identity()
     
-    # Get events from MongoDB
-    pipeline = [
-        {'$match': {'user_id': user_id}},
-        {'$group': {
-            '_id': '$event_type',
-            'count': {'$sum': 1}
-        }}
-    ]
-    
-    events = list(current_app.mongo.events.aggregate(pipeline))
+    # Get events from PostgreSQL
+    stats = db.session.query(
+        Event.event_type,
+        func.count(Event.id).label('count')
+    ).filter_by(user_id=user_id).group_by(Event.event_type).all()
     
     # Create pie chart
     fig = go.Figure(data=[go.Pie(
-        labels=[event['_id'] for event in events],
-        values=[event['count'] for event in events]
+        labels=[stat[0] for stat in stats],
+        values=[stat[1] for stat in stats]
     )])
     
     fig.update_layout(title='Event Distribution')
@@ -94,35 +92,27 @@ def get_event_distribution():
 def get_user_activity():
     user_id = get_jwt_identity()
     
-    # Get events from MongoDB for the last 30 days
+    # Get events from PostgreSQL for the last 30 days
     thirty_days_ago = datetime.utcnow() - timedelta(days=30)
     
-    pipeline = [
-        {
-            '$match': {
-                'user_id': user_id,
-                'created_at': {'$gte': thirty_days_ago}
-            }
-        },
-        {
-            '$group': {
-                '_id': {
-                    'date': {'$dateToString': {'format': '%Y-%m-%d', 'date': '$created_at'}},
-                    'event_type': '$event_type'
-                },
-                'count': {'$sum': 1}
-            }
-        }
-    ]
-    
-    events = list(current_app.mongo.events.aggregate(pipeline))
+    events = db.session.query(
+        func.date(Event.created_at).label('date'),
+        Event.event_type,
+        func.count(Event.id).label('count')
+    ).filter(
+        Event.user_id == user_id,
+        Event.created_at >= thirty_days_ago
+    ).group_by(
+        func.date(Event.created_at),
+        Event.event_type
+    ).all()
     
     # Convert to DataFrame
     df = pd.DataFrame([
         {
-            'date': event['_id']['date'],
-            'event_type': event['_id']['event_type'],
-            'count': event['count']
+            'date': event[0].strftime('%Y-%m-%d'),
+            'event_type': event[1],
+            'count': event[2]
         }
         for event in events
     ])
