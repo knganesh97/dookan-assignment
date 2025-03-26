@@ -22,6 +22,10 @@ def create_app():
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'jwt-secret-key')
     
+    # JWT Configuration
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 15 * 60  # 15 minutes in seconds
+    app.config['JWT_REFRESH_TOKEN_EXPIRES'] = 7 * 24 * 60 * 60  # 7 days in seconds
+    
     # Initialize MongoDB
     mongo_client = MongoClient(os.getenv('MONGODB_URI'))
     app.mongo = mongo_client.dookan

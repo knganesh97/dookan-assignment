@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from werkzeug.security import generate_password_hash, check_password_hash
 from bson import ObjectId
 
@@ -7,7 +7,7 @@ class User:
         self.email = email
         self.password_hash = generate_password_hash(password)
         self.name = name
-        self.created_at = datetime.utcnow()
+        self.created_at = datetime.now(timezone.utc)
         self.last_login = None
     
     @staticmethod
@@ -15,7 +15,7 @@ class User:
         user = User(data['email'], '')  # Password will be set separately
         user.password_hash = data['password_hash']
         user.name = data.get('name')
-        user.created_at = data.get('created_at', datetime.utcnow())
+        user.created_at = data.get('created_at', datetime.now(timezone.utc))
         user.last_login = data.get('last_login')
         user._id = data.get('_id')
         return user
