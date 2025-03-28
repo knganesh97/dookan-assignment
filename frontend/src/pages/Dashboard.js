@@ -14,7 +14,7 @@ import {
   useColorModeValue,
 } from '@chakra-ui/react';
 import { FiShoppingBag, FiShoppingCart, FiDollarSign, FiUsers } from 'react-icons/fi';
-import axios from 'axios';
+import axios from '../utils/axios';
 
 const StatCard = ({ title, value, icon: Icon, change, isIncrease }) => (
   <Box
@@ -50,7 +50,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await axios.get('/api/shopify/analytics');
+        const response = await axios.get('/shopify/analytics');
         const data = response.data;
         
         // Calculate changes (mock data for now)

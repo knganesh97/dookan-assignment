@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../utils/axios';
 
 const AuthContext = createContext(null);
 
@@ -17,23 +17,45 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      fetchUser(token);
+    const accessToken = localStorage.getItem('access_token');
+    if (accessToken) {
+      fetchUser();
     } else {
       setLoading(false);
     }
   }, []);
 
-  const fetchUser = async (token) => {
+  const fetchUser = async () => {
     try {
-      const response = await axios.get('/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.get('/auth/me');
       setUser(response.data);
     } catch (err) {
-      localStorage.removeItem('token');
-      setUser(null);
+      // If access token is expired, try to refresh it
+      if (err.response?.status === 401) {
+        try {
+          const refreshToken = localStorage.getItem('refresh_token');
+          if (refreshToken) {
+            const response = await axios.post('/auth/refresh', {}, {
+              headers: { Authorization: `Bearer ${refreshToken}` }
+            });
+            localStorage.setItem('access_token', response.data.access_token);
+            // Retry fetching user
+            const userResponse = await axios.get('/auth/me');
+            setUser(userResponse.data);
+          } else {
+            throw new Error('No refresh token available');
+          }
+        } catch (refreshErr) {
+          // If refresh fails, clear all tokens and user
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+          setUser(null);
+        }
+      } else {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -41,9 +63,10 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('/api/auth/login', { email, password });
-      const { access_token, user } = response.data;
-      localStorage.setItem('token', access_token);
+      const response = await axios.post('/auth/login', { email, password });
+      const { access_token, refresh_token, user } = response.data;
+      localStorage.setItem('access_token', access_token);
+      localStorage.setItem('refresh_token', refresh_token);
       setUser(user);
       return user;
     } catch (err) {
@@ -54,8 +77,12 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (email, password, name) => {
     try {
-      const response = await axios.post('/api/auth/register', { email, password, name });
-      return response.data;
+      const response = await axios.post('/auth/register', { email, password, name });
+      const { access_token, refresh_token, user } = response.data;
+      localStorage.setItem('access_token', access_token);
+      localStorage.setItem('refresh_token', refresh_token);
+      setUser(user);
+      return user;
     } catch (err) {
       setError(err.response?.data?.error || 'Registration failed');
       throw err;
@@ -63,17 +90,15 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
     setUser(null);
     setError(null);
   };
 
   const updateProfile = async (data) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.put('/api/auth/me', data, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.put('/auth/me', data);
       setUser(response.data);
       return response.data;
     } catch (err) {

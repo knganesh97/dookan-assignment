@@ -29,7 +29,7 @@ import {
   VStack,
 } from '@chakra-ui/react';
 import { FiPlus } from 'react-icons/fi';
-import axios from 'axios';
+import axios from '../utils/axios';
 
 const EventTypeBadge = ({ type }) => {
   const getTypeColor = (type) => {
@@ -117,7 +117,7 @@ const Events = () => {
 
   const fetchEvents = async () => {
     try {
-      const response = await axios.get('/api/events');
+      const response = await axios.get('/events');
       setEvents(response.data.events);
     } catch (error) {
       toast({
@@ -138,7 +138,7 @@ const Events = () => {
 
   const handleCreateEvent = async (formData) => {
     try {
-      await axios.post('/api/events', formData);
+      await axios.post('/events', formData);
       toast({
         title: 'Event created successfully',
         status: 'success',
@@ -161,7 +161,7 @@ const Events = () => {
   const handleDeleteEvent = async (eventId) => {
     if (window.confirm('Are you sure you want to delete this event?')) {
       try {
-        await axios.delete(`/api/events/${eventId}`);
+        await axios.delete(`/events/${eventId}`);
         toast({
           title: 'Event deleted successfully',
           status: 'success',

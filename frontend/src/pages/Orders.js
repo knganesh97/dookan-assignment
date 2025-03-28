@@ -16,7 +16,7 @@ import {
   HStack,
   Input,
 } from '@chakra-ui/react';
-import axios from 'axios';
+import axios from '../utils/axios';
 
 const OrderStatusBadge = ({ status }) => {
   const getStatusColor = (status) => {
@@ -48,7 +48,7 @@ const Orders = () => {
 
   const fetchOrders = async () => {
     try {
-      const response = await axios.get('/api/shopify/orders');
+      const response = await axios.get('/shopify/orders');
       setOrders(response.data.orders.edges.map(edge => edge.node));
     } catch (error) {
       toast({

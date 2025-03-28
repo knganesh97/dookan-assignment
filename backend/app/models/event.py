@@ -8,7 +8,7 @@ class Event(db.Model):
     user_id = db.Column(db.String(120), nullable=False)  # MongoDB user ID
     event_type = db.Column(db.String(50), nullable=False)
     description = db.Column(db.Text)
-    metadata = db.Column(db.JSON)
+    event_metadata = db.Column(db.JSON)
     ip_address = db.Column(db.String(45))
     user_agent = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -19,7 +19,7 @@ class Event(db.Model):
             'user_id': self.user_id,
             'event_type': self.event_type,
             'description': self.description,
-            'metadata': self.metadata,
+            'metadata': self.event_metadata,
             'ip_address': self.ip_address,
             'user_agent': self.user_agent,
             'created_at': self.created_at.isoformat()

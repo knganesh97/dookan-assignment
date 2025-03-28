@@ -9,7 +9,7 @@ import {
   Select,
   HStack,
 } from '@chakra-ui/react';
-import axios from 'axios';
+import axios from '../utils/axios';
 
 const ChartCard = ({ title, children }) => (
   <Box
@@ -36,9 +36,9 @@ const Analytics = () => {
   const fetchAnalytics = async () => {
     try {
       const [salesResponse, eventResponse, activityResponse] = await Promise.all([
-        axios.get('/api/analytics/sales-trend'),
-        axios.get('/api/analytics/event-distribution'),
-        axios.get('/api/analytics/user-activity'),
+        axios.get('/analytics/sales-trend'),
+        axios.get('/analytics/event-distribution'),
+        axios.get('/analytics/user-activity'),
       ]);
 
       setSalesData(salesResponse.data.plot);

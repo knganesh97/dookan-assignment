@@ -5,6 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from pymongo import MongoClient
 import os
 from dotenv import load_dotenv
+from .config import config
 
 # Load environment variables
 load_dotenv()
@@ -13,8 +14,9 @@ load_dotenv()
 db = SQLAlchemy()
 jwt = JWTManager()
 
-def create_app():
+def create_app(config_name='default'):
     app = Flask(__name__)
+    app.config.from_object(config[config_name])
     
     # Configure app
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev')
@@ -31,9 +33,23 @@ def create_app():
     app.mongo = mongo_client.dookan
     
     # Initialize extensions
-    CORS(app)
+    CORS(app, 
+         resources={r"/api/*": {
+             "origins": ["http://localhost:3000"],
+             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+             "allow_headers": ["Content-Type", "Authorization", "Accept"],
+             "supports_credentials": True,
+             "expose_headers": ["Content-Type", "Authorization"],
+             "max_age": 3600,
+             "allow_credentials": True
+         }})
+    
     db.init_app(app)
     jwt.init_app(app)
+    
+    # Create unique index on email field
+    with app.app_context():
+        app.mongo.users.create_index([('email', 1)], unique=True)
     
     # Register blueprints
     from .routes.auth import auth_bp
@@ -42,7 +58,7 @@ def create_app():
     from .routes.analytics import analytics_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
-    app.register_blueprint(shopify_bp, url_prefix='/api/shopify')
+    app.register_blueprint(shopify_bp, url_prefix='/api')
     app.register_blueprint(events_bp, url_prefix='/api/events')
     app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
     

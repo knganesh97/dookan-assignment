@@ -9,7 +9,7 @@ from bson.objectid import ObjectId
 
 shopify_bp = Blueprint('shopify', __name__)
 
-@shopify_bp.route('/api/products', methods=['POST'])
+@shopify_bp.route('/products', methods=['POST'])
 @jwt_required()
 def create_product():
     """Create a new product"""
@@ -49,9 +49,12 @@ def create_product():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@shopify_bp.route('/api/products', methods=['GET'])
+@shopify_bp.route('/products', methods=['GET', 'OPTIONS'])
 @jwt_required()
 def get_products():
+    if request.method == 'OPTIONS':
+        return '', 204
+        
     """List all products with optional sorting"""
     try:
         # Validate query parameters
@@ -88,7 +91,7 @@ def get_products():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@shopify_bp.route('/api/products/<product_id>', methods=['GET'])
+@shopify_bp.route('/products/<product_id>', methods=['GET'])
 @jwt_required()
 def get_product(product_id):
     """Retrieve product details by ID"""
@@ -112,7 +115,7 @@ def get_product(product_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@shopify_bp.route('/api/products/<product_id>', methods=['PUT'])
+@shopify_bp.route('/products/<product_id>', methods=['PUT'])
 @jwt_required()
 def update_product(product_id):
     """Update an existing product"""
@@ -177,7 +180,7 @@ def update_product(product_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@shopify_bp.route('/api/products/<product_id>', methods=['DELETE'])
+@shopify_bp.route('/products/<product_id>', methods=['DELETE'])
 @jwt_required()
 def delete_product(product_id):
     """Delete a product"""

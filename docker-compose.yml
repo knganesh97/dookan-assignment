@@ -6,14 +6,11 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "5000:5000"
+      - "5001:5000"
     volumes:
       - ./backend:/app
-    environment:
-      - FLASK_APP=app
-      - FLASK_ENV=development
-      - MONGODB_URI=mongodb://mongodb:27017/dookan
-      - POSTGRES_URI=postgresql://postgres:postgres@postgres:5432/dookan
+    env_file:
+      - ./backend/.env
     depends_on:
       - mongodb
       - postgres
@@ -27,8 +24,8 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    environment:
-      - REACT_APP_API_URL=http://localhost:5000/api
+    env_file:
+      - ./frontend/.env
     depends_on:
       - backend
 

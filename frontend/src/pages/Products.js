@@ -25,13 +25,14 @@ import {
   Text,
 } from '@chakra-ui/react';
 import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
-import axios from 'axios';
+import axios from '../utils/axios';
 
 const ProductModal = ({ isOpen, onClose, product, onSubmit }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     price: '',
+    sku: '',
     ...product,
   });
 
@@ -41,6 +42,7 @@ const ProductModal = ({ isOpen, onClose, product, onSubmit }) => {
         title: product.title,
         description: product.description,
         price: product.priceRange?.minVariantPrice?.amount || '',
+        sku: product.sku || '',
       });
     }
   }, [product]);
@@ -84,6 +86,14 @@ const ProductModal = ({ isOpen, onClose, product, onSubmit }) => {
                   placeholder="Product price"
                 />
               </FormControl>
+              <FormControl isRequired>
+                <FormLabel>SKU</FormLabel>
+                <Input
+                  value={formData.sku}
+                  onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                  placeholder="Product SKU"
+                />
+              </FormControl>
               <Button type="submit" colorScheme="blue" width="full">
                 {product ? 'Update Product' : 'Add Product'}
               </Button>
@@ -104,7 +114,7 @@ const Products = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await axios.get('/api/shopify/products');
+      const response = await axios.get('/products');
       setProducts(response.data.products.edges.map(edge => edge.node));
     } catch (error) {
       toast({
@@ -125,19 +135,21 @@ const Products = () => {
 
   const handleAddProduct = async (formData) => {
     try {
-      // Implement product creation logic here
-      toast({
-        title: 'Product added successfully',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-      onClose();
-      fetchProducts();
+      const response = await axios.post('/products', formData);
+      if (response.status === 201) {  // Check for successful creation
+        toast({
+          title: 'Product added successfully',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+        onClose();
+        fetchProducts();
+      }
     } catch (error) {
       toast({
         title: 'Error adding product',
-        description: error.message,
+        description: error.response?.data?.error || error.message,
         status: 'error',
         duration: 3000,
         isClosable: true,
