@@ -29,6 +29,20 @@ services:
     depends_on:
       - backend
 
+  frontend-purity:
+    build:
+      context: ./frontend-purity
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./frontend-purity:/app
+      - /app/node_modules
+    env_file:
+      - ./frontend-purity/.env
+    depends_on:
+      - backend
+
   mongodb:
     image: mongo:latest
     ports:
