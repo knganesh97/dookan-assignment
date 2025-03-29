@@ -109,13 +109,32 @@ const Products = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    per_page: 20,
+    total: 0,
+    total_pages: 0
+  });
   const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
 
   const fetchProducts = async () => {
     try {
-      const response = await axios.get('/products');
-      setProducts(response.data.products.edges.map(edge => edge.node));
+      const response = await axios.get('/products', {
+        params: {
+          page: pagination.page,
+          per_page: pagination.per_page,
+          sort_by: 'created_at',
+          order: 'desc'
+        }
+      });
+      setProducts(response.data.products);
+      setPagination({
+        page: response.data.page,
+        per_page: response.data.per_page,
+        total: response.data.total,
+        total_pages: response.data.total_pages
+      });
     } catch (error) {
       toast({
         title: 'Error fetching products',
@@ -131,12 +150,12 @@ const Products = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [pagination.page]);
 
   const handleAddProduct = async (formData) => {
     try {
       const response = await axios.post('/products', formData);
-      if (response.status === 201) {  // Check for successful creation
+      if (response.status === 201) {
         toast({
           title: 'Product added successfully',
           status: 'success',
@@ -159,15 +178,17 @@ const Products = () => {
 
   const handleEditProduct = async (formData) => {
     try {
-      // Implement product update logic here
-      toast({
-        title: 'Product updated successfully',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-      onClose();
-      fetchProducts();
+      const response = await axios.put(`/products/${formData._id}`, formData);
+      if (response.status === 200) {
+        toast({
+          title: 'Product updated successfully',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+        onClose();
+        fetchProducts();
+      }
     } catch (error) {
       toast({
         title: 'Error updating product',
@@ -182,14 +203,16 @@ const Products = () => {
   const handleDeleteProduct = async (productId) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
       try {
-        // Implement product deletion logic here
-        toast({
-          title: 'Product deleted successfully',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
-        fetchProducts();
+        const response = await axios.delete(`/products/${productId}`);
+        if (response.status === 200) {
+          toast({
+            title: 'Product deleted successfully',
+            status: 'success',
+            duration: 3000,
+            isClosable: true,
+          });
+          fetchProducts();
+        }
       } catch (error) {
         toast({
           title: 'Error deleting product',
@@ -229,15 +252,19 @@ const Products = () => {
                 <Th>Title</Th>
                 <Th>Description</Th>
                 <Th>Price</Th>
+                <Th>SKU</Th>
+                <Th>Status</Th>
                 <Th>Actions</Th>
               </Tr>
             </Thead>
             <Tbody>
               {products.map((product) => (
-                <Tr key={product.id}>
+                <Tr key={product._id}>
                   <Td>{product.title}</Td>
                   <Td>{product.description}</Td>
-                  <Td>${product.priceRange?.minVariantPrice?.amount || '0.00'}</Td>
+                  <Td>${product.price.toFixed(2)}</Td>
+                  <Td>{product.sku}</Td>
+                  <Td>{product.status}</Td>
                   <Td>
                     <Button
                       size="sm"
@@ -252,7 +279,7 @@ const Products = () => {
                     <Button
                       size="sm"
                       colorScheme="red"
-                      onClick={() => handleDeleteProduct(product.id)}
+                      onClick={() => handleDeleteProduct(product._id)}
                     >
                       <FiTrash2 />
                     </Button>
@@ -263,6 +290,26 @@ const Products = () => {
           </Table>
         </Box>
       )}
+
+      <Box mt={4} display="flex" justifyContent="center">
+        <Button
+          isDisabled={pagination.page === 1}
+          onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+          mr={2}
+        >
+          Previous
+        </Button>
+        <Text alignSelf="center" mx={4}>
+          Page {pagination.page} of {pagination.total_pages}
+        </Text>
+        <Button
+          isDisabled={pagination.page === pagination.total_pages}
+          onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+          ml={2}
+        >
+          Next
+        </Button>
+      </Box>
 
       <ProductModal
         isOpen={isOpen}
