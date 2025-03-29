@@ -1,8 +1,8 @@
 // Chakra imports
-import { Flex, Grid, useColorModeValue } from "@chakra-ui/react";
+import { Flex, Grid, useColorModeValue, useToast } from "@chakra-ui/react";
 import avatar4 from "assets/img/avatars/avatar4.png";
 import ProfileBgImage from "assets/img/ProfileBackground.png";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { FaCube, FaPenFancy } from "react-icons/fa";
 import { IoDocumentsSharp } from "react-icons/io5";
 import Conversations from "./components/Conversations";
@@ -10,6 +10,7 @@ import Header from "./components/Header";
 import PlatformSettings from "./components/PlatformSettings";
 import ProfileInformation from "./components/ProfileInformation";
 import Projects from "./components/Projects";
+import instance from "utils/axios";
 
 function Profile() {
   // Chakra color mode
@@ -19,14 +20,50 @@ function Profile() {
     "linear-gradient(112.83deg, rgba(255, 255, 255, 0.21) 0%, rgba(255, 255, 255, 0) 110.84%)"
   );
 
+  const [userData, setUserData] = useState({
+    name: "",
+    email: "",
+    mobile: "",
+    location: "",
+    description: "Hi, I'm a user of this platform. Welcome to my profile!"
+  });
+
+  const toast = useToast();
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await instance.get('/auth/me');
+        const user = response.data;
+        setUserData({
+          ...userData,
+          name: user.name,
+          email: user.email,
+          mobile: user.mobile || "Not provided",
+          location: user.location || "Not provided"
+        });
+      } catch (error) {
+        toast({
+          title: "Error fetching profile",
+          description: error.response?.data?.message || "Failed to load profile data",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
   return (
     <Flex direction='column'>
       <Header
         backgroundHeader={ProfileBgImage}
         backgroundProfile={bgProfile}
         avatarImage={avatar4}
-        name={"Esthera Jackson"}
-        email={"esthera@simmmple.com"}
+        name={userData.name}
+        email={userData.email}
         tabs={[
           {
             name: "OVERVIEW",
@@ -50,13 +87,11 @@ function Profile() {
         />
         <ProfileInformation
           title={"Profile Information"}
-          description={
-            "Hi, I’m Esthera Jackson, Decisions: If you can’t decide, the answer is no. If two equally difficult paths, choose the one more painful in the short term (pain avoidance is creating an illusion of equality)."
-          }
-          name={"Esthera Jackson"}
-          mobile={"(44) 123 1234 123"}
-          email={"esthera@simmmple.com"}
-          location={"United States"}
+          description={userData.description}
+          name={userData.name}
+          mobile={userData.mobile}
+          email={userData.email}
+          location={userData.location}
         />
         <Conversations title={"Conversations"} />
       </Grid>

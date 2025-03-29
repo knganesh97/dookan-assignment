@@ -12,17 +12,87 @@ import {
   Switch,
   Text,
   useColorModeValue,
+  useToast,
 } from "@chakra-ui/react";
 // Assets
 import BgSignUp from "assets/img/BgSignUp.png";
-import React from "react";
+import React, { useState } from "react";
 import { FaApple, FaFacebook, FaGoogle } from "react-icons/fa";
+import { useHistory } from "react-router-dom";
+import axios from "utils/axios";
 
 function SignUp() {
+  const history = useHistory();
+  const toast = useToast();
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    rememberMe: false
+  });
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSwitchChange = (e) => {
+    setFormData(prev => ({
+      ...prev,
+      rememberMe: e.target.checked
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const response = await axios.post('/auth/register', {
+        email: formData.email,
+        password: formData.password,
+        name: formData.name
+      });
+
+      // Store tokens
+      const { access_token, refresh_token } = response.data;
+      localStorage.setItem('access_token', access_token);
+      if (formData.rememberMe) {
+        localStorage.setItem('refresh_token', refresh_token);
+      }
+
+      toast({
+        title: "Registration successful",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+
+      // Redirect to dashboard
+      history.push("/admin/dashboard");
+    } catch (error) {
+      console.error('Registration error:', error);
+      toast({
+        title: "Registration failed",
+        description: error.response?.data?.error || "An error occurred during registration",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const titleColor = useColorModeValue("teal.300", "teal.200");
   const textColor = useColorModeValue("gray.700", "white");
   const bgColor = useColorModeValue("white", "gray.700");
   const bgIcons = useColorModeValue("teal.200", "rgba(255, 255, 255, 0.5)");
+
   return (
     <Flex
       direction='column'
@@ -150,7 +220,7 @@ function SignUp() {
             mb='22px'>
             or
           </Text>
-          <FormControl>
+          <FormControl as="form" onSubmit={handleSubmit}>
             <FormLabel ms='4px' fontSize='sm' fontWeight='normal'>
               Name
             </FormLabel>
@@ -159,9 +229,13 @@ function SignUp() {
               ms='4px'
               borderRadius='15px'
               type='text'
+              name="name"
               placeholder='Your full name'
               mb='24px'
               size='lg'
+              value={formData.name}
+              onChange={handleInputChange}
+              required
             />
             <FormLabel ms='4px' fontSize='sm' fontWeight='normal'>
               Email
@@ -171,9 +245,13 @@ function SignUp() {
               ms='4px'
               borderRadius='15px'
               type='email'
+              name="email"
               placeholder='Your email address'
               mb='24px'
               size='lg'
+              value={formData.email}
+              onChange={handleInputChange}
+              required
             />
             <FormLabel ms='4px' fontSize='sm' fontWeight='normal'>
               Password
@@ -183,12 +261,22 @@ function SignUp() {
               ms='4px'
               borderRadius='15px'
               type='password'
+              name="password"
               placeholder='Your password'
               mb='24px'
               size='lg'
+              value={formData.password}
+              onChange={handleInputChange}
+              required
             />
             <FormControl display='flex' alignItems='center' mb='24px'>
-              <Switch id='remember-login' colorScheme='teal' me='10px' />
+              <Switch 
+                id='remember-login' 
+                colorScheme='teal' 
+                me='10px'
+                isChecked={formData.rememberMe}
+                onChange={handleSwitchChange}
+              />
               <FormLabel htmlFor='remember-login' mb='0' fontWeight='normal'>
                 Remember me
               </FormLabel>
@@ -202,6 +290,7 @@ function SignUp() {
               w='100%'
               h='45'
               mb='24px'
+              isLoading={isLoading}
               _hover={{
                 bg: "teal.200",
               }}
@@ -223,7 +312,8 @@ function SignUp() {
                 color={titleColor}
                 as='span'
                 ms='5px'
-                href='#'
+                onClick={() => history.push("/auth/signin")}
+                cursor="pointer"
                 fontWeight='bold'>
                 Sign In
               </Link>
