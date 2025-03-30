@@ -11,12 +11,22 @@ function Tables() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState('desc');
 
   useEffect(() => {
+    const params = {
+      page: pageNumber,
+      per_page: perPage,
+      sort_by: sortBy,
+      order: sortOrder
+    }
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const response = await productService.getProducts();
+        const response = await productService.getProducts(params);
         console.log('API Response:', response);
         
         // The response is already unwrapped by the interceptor
@@ -37,7 +47,7 @@ function Tables() {
     };
 
     fetchProducts();
-  }, []);
+  }, [pageNumber, perPage, sortBy, sortOrder]);
 
   console.log('Current products state:', products);
 
@@ -45,10 +55,18 @@ function Tables() {
     <Flex direction='column' pt={{ base: "120px", md: "75px" }}>
       <Products
         title={"Products Table"}
-        captions={["Product", "SKU", "Price", "Status", "Created", ""]}
+        captions={["Image", "Title", "SKU", "Price", "Edit", "Delete"]}
         data={products}
         loading={loading}
         error={error}
+        setPageNumber={setPageNumber}
+        setPerPage={setPerPage}
+        setSortBy={setSortBy}
+        setSortOrder={setSortOrder}
+        pageNumber={pageNumber}
+        perPage={perPage}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
       />
       <Authors
         title={"Authors Table"}

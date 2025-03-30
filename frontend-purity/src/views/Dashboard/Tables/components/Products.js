@@ -23,14 +23,22 @@ import {
   Center,
   Alert,
   AlertIcon,
+  Select,
+  HStack,
+  IconButton,
 } from "@chakra-ui/react";
 import moment from "moment";
+import { FaEdit, FaTrash, FaSort, FaSortUp, FaSortDown } from "react-icons/fa";
 // Custom components
 import Card from "components/Card/Card.js";
 import CardBody from "components/Card/CardBody.js";
 import CardHeader from "components/Card/CardHeader.js";
 
-function Products({ title, captions, data = [], loading = false, error = null }) {
+const Products = ({ 
+    title, captions, data = [], loading = false, error = null, 
+    setPageNumber, setPerPage, setSortBy, setSortOrder,
+    pageNumber, perPage, sortBy, sortOrder
+}) => {
   const textColor = useColorModeValue("gray.700", "white");
   const colorStatus = useColorModeValue("white", "gray.400");
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -39,6 +47,16 @@ function Products({ title, captions, data = [], loading = false, error = null })
   const handleViewDetails = (product) => {
     setSelectedProduct(product);
     onOpen();
+  };
+
+  const handleEdit = (product) => {
+    // TODO: Implement edit functionality
+    console.log('Edit product:', product);
+  };
+
+  const handleDelete = (product) => {
+    // TODO: Implement delete functionality
+    console.log('Delete product:', product);
   };
 
   const getStatusColor = (status) => {
@@ -54,14 +72,24 @@ function Products({ title, captions, data = [], loading = false, error = null })
     }
   };
 
-  const formatDate = (date) => {
-    if (!date) return "N/A";
-    return moment(date).format("MMM DD, YYYY");
-  };
 
   const formatDateTime = (date) => {
     if (!date) return "N/A";
     return moment(date).format("MMM DD, YYYY HH:mm");
+  };
+
+  const handleSort = (column) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortOrder('asc');
+    }
+  };
+
+  const getSortIcon = (column) => {
+    if (sortBy !== column) return <FaSort />;
+    return sortOrder === 'asc' ? <FaSortUp /> : <FaSortDown />;
   };
 
   return (
@@ -88,84 +116,130 @@ function Products({ title, captions, data = [], loading = false, error = null })
             <Text color={textColor}>No products found</Text>
           </Center>
         ) : (
-          <Table variant='simple' color={textColor}>
-            <Thead>
-              <Tr my='.8rem' pl='0px'>
-                {captions.map((caption, idx) => {
-                  return (
-                    <Th color='gray.400' key={idx} ps={idx === 0 ? "0px" : null}>
-                      {caption}
-                    </Th>
-                  );
-                })}
-              </Tr>
-            </Thead>
-            <Tbody>
-              {data.map((row) => {
-                return (
-                  <Tr key={row.id || row._id}>
-                    <Th>
-                      <Flex align="center" py=".8rem" minWidth="100%" flexWrap="nowrap">
-                        {row.thumbnail_url && (
-                          <Image
-                            src={row.thumbnail_url}
-                            alt={row.title || "Product Image"}
-                            width="40px"
-                            height="40px"
-                            borderRadius="8px"
-                            mr="12px"
-                          />
-                        )}
-                        <Text
-                          fontSize="sm"
-                          color={textColor}
-                          fontWeight="bold"
-                          minWidth="100%"
-                        >
-                          {row.title || "Untitled Product"}
-                        </Text>
-                      </Flex>
-                    </Th>
-                    <Th>
-                      <Text fontSize="sm" color={textColor} fontWeight="bold">
-                        {row.sku || "N/A"}
-                      </Text>
-                    </Th>
-                    <Th>
-                      <Text fontSize="sm" color={textColor} fontWeight="bold">
-                        ${(row.price || 0).toFixed(2)}
-                      </Text>
-                    </Th>
-                    <Th>
-                      <Badge
-                        bg={getStatusColor(row.status)}
-                        color={colorStatus}
-                        fontSize="16px"
-                        p="3px 10px"
-                        borderRadius="8px"
-                      >
-                        {row.status || "unknown"}
-                      </Badge>
-                    </Th>
-                    <Th>
-                      <Text fontSize="sm" color={textColor} fontWeight="bold">
-                        {formatDate(row.created_at)}
-                      </Text>
-                    </Th>
-                    <Th>
-                      <Button
-                        colorScheme="blue"
+            <>
+                <Table variant='simple' color={textColor}>
+                    <Thead>
+                        <Tr my='.8rem' pl='0px'>
+                        {captions.map((caption, idx) => {
+                            const isSortable = ['title', 'sku', 'price'].includes(caption.toLowerCase());
+                            return (
+                            <Th 
+                                color='gray.400' 
+                                key={idx} 
+                                ps={idx === 0 ? "0px" : null}
+                                cursor={isSortable ? "pointer" : "default"}
+                                onClick={isSortable ? () => handleSort(caption.toLowerCase()) : undefined}
+                            >
+                                <Flex align="center">
+                                {caption}
+                                {isSortable && (
+                                    <Box ml={2}>{getSortIcon(caption.toLowerCase())}</Box>
+                                )}
+                                </Flex>
+                            </Th>
+                            );
+                        })}
+                        </Tr>
+                    </Thead>
+                    <Tbody>
+                        {data.map((row) => {
+                        return (
+                            <Tr key={row.id || row._id}>
+                            <Th>
+                                <Flex align="center" py=".8rem" minWidth="100%" flexWrap="nowrap">
+                                {row.image_url && (
+                                    <Image
+                                    src={row.image_url}
+                                    alt={row.title || "Product Image"}
+                                    width="40px"
+                                    height="40px"
+                                    borderRadius="8px"
+                                    mr="12px"
+                                    />
+                                )}
+                                </Flex>
+                            </Th>
+                            <Th>
+                                <Text
+                                    fontSize="sm"
+                                    color={textColor}
+                                    fontWeight="bold"
+                                    minWidth="100%"
+                                    onClick={() => handleViewDetails(row)}
+                                    cursor="pointer"
+                                >
+                                    {row.title || "Untitled Product"}
+                                </Text>
+                            </Th>
+                            <Th>
+                                <Text fontSize="sm" color={textColor} fontWeight="bold">
+                                {row.sku || "N/A"}
+                                </Text>
+                            </Th>
+                            <Th>
+                                <Text fontSize="sm" color={textColor} fontWeight="bold">
+                                ${(row.price || 0).toFixed(2)}
+                                </Text>
+                            </Th>
+                            <Th>
+                                <Button
+                                    size="sm"
+                                    colorScheme="blue"
+                                    leftIcon={<FaEdit />}
+                                    onClick={() => handleEdit(row)}
+                                >
+                                    Edit
+                                </Button>
+                            </Th>
+                            <Th>
+                                <Button
+                                    size="sm"
+                                    colorScheme="red"
+                                    leftIcon={<FaTrash />}
+                                    onClick={() => handleDelete(row)}
+                                >
+                                    Delete
+                                </Button>
+                            </Th>
+                            </Tr>
+                        );
+                        })}
+                    </Tbody>
+                </Table>
+            
+                <Flex justify="space-between" align="center" mt={4}>
+                    <HStack spacing={4}>
+                        <Text>Rows per page:</Text>
+                        <Select
                         size="sm"
-                        onClick={() => handleViewDetails(row)}
-                      >
-                        View Details
-                      </Button>
-                    </Th>
-                  </Tr>
-                );
-              })}
-            </Tbody>
-          </Table>
+                        width="70px"
+                        value={perPage}
+                        onChange={(e) => setPerPage(Number(e.target.value))}
+                        >
+                        <option value={5}>5</option>
+                        <option value={10}>10</option>
+                        <option value={20}>20</option>
+                        <option value={50}>50</option>
+                        </Select>
+                    </HStack>
+                
+                    <HStack spacing={2}>
+                        <IconButton
+                        size="sm"
+                        icon={<FaSortUp />}
+                        onClick={() => setPageNumber(prev => Math.max(1, prev - 1))}
+                        isDisabled={pageNumber === 1}
+                        />
+                        <Text>Page {pageNumber}</Text>
+                        <IconButton
+                        size="sm"
+                        icon={<FaSortDown />}
+                        onClick={() => setPageNumber(prev => prev + 1)}
+                        isDisabled={data.length < perPage}
+                        />
+                    </HStack>
+                </Flex>
+            </>
         )}
       </CardBody>
 
