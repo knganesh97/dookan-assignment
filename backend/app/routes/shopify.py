@@ -3,7 +3,13 @@ from flask_jwt_extended import jwt_required
 from gql import gql
 from ..models.product import Product
 from ..validations.product import ProductValidator, ValidationError
-from ..helpers.mongo_helpers import create_mongo_product, update_mongo_product, delete_mongo_product
+from ..helpers.mongo_helpers import (
+    create_mongo_product, 
+    update_mongo_product, 
+    delete_mongo_product,
+    get_mongo_products,
+    get_mongo_product_by_id
+)
 from ..helpers.shopify_helpers import create_shopify_product, update_shopify_product, delete_shopify_product, get_shopify_client
 from bson.objectid import ObjectId
 
@@ -68,25 +74,20 @@ def get_products():
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 20))
         
-        # Convert sort order to MongoDB format (1 for ascending, -1 for descending)
-        sort_direction = -1 if sort_order == 'desc' else 1
-        
-        # Get total count for pagination
-        total_count = current_app.mongo.products.count_documents({'is_deleted': False})
-        
-        # Get paginated and sorted results
-        products = current_app.mongo.products.find(
-            {'is_deleted': False}
-        ).sort(sort_field, sort_direction) \
-         .skip((page - 1) * per_page) \
-         .limit(per_page)
+        result = get_mongo_products(
+            current_app.mongo,
+            sort_field=sort_field,
+            sort_order=sort_order,
+            page=page,
+            per_page=per_page
+        )
         
         return jsonify({
-            'products': [Product.from_dict(p).to_dict() for p in products],
-            'total': total_count,
-            'page': page,
-            'per_page': per_page,
-            'total_pages': (total_count + per_page - 1) // per_page
+            'products': [p.to_dict() for p in result['products']],
+            'total': result['total'],
+            'page': result['page'],
+            'per_page': result['per_page'],
+            'total_pages': result['total_pages']
         }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -101,18 +102,11 @@ def get_product(product_id):
         if validation_errors:
             return jsonify({'errors': validation_errors}), 400
         
-        # Find product in MongoDB
-        product_data = current_app.mongo.products.find_one({
-            '_id': ObjectId(product_id),
-            'is_deleted': False
-        })
-        
-        if not product_data:
-            return jsonify({'error': 'Product not found'}), 404
-            
-        product = Product.from_dict(product_data)
+        product = get_mongo_product_by_id(current_app.mongo, product_id)
         return jsonify(product.to_dict()), 200
     except Exception as e:
+        if str(e) == "Product not found":
+            return jsonify({'error': str(e)}), 404
         return jsonify({'error': str(e)}), 500
 
 @shopify_bp.route('/products/<product_id>', methods=['PUT'])
