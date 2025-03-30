@@ -48,7 +48,7 @@ def register():
             'message': 'User registered successfully',
             'access_token': access_token,
             'refresh_token': refresh_token,
-            'user': user.to_dict()
+            'user': user.to_safe_dict()
         }), 201
     except ValueError as e:
         logger.warning(f"Registration failed - validation error: {str(e)}")
@@ -94,7 +94,7 @@ def login():
         return jsonify({
             'access_token': access_token,
             'refresh_token': refresh_token,
-            'user': user.to_dict()
+            'user': user.to_safe_dict()
         })
     except ValueError as e:
         logger.warning(f"Login failed - validation error: {str(e)}")
@@ -120,7 +120,7 @@ def get_current_user():
         return jsonify({'error': 'User not found'}), 404
     
     user = User.from_dict(user_data)
-    return jsonify(user.to_dict())
+    return jsonify(user.to_safe_dict())
 
 @auth_bp.route('/me', methods=['PUT'])
 @jwt_required()
@@ -149,4 +149,4 @@ def update_current_user():
     
     # Get updated user data
     updated_user = User.from_dict(current_app.mongo.users.find_one({'_id': user._id}))
-    return jsonify(updated_user.to_dict()) 
+    return jsonify(updated_user.to_safe_dict()) 

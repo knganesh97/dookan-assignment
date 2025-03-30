@@ -37,6 +37,16 @@ class User:
             'last_login': self.last_login
         }
     
+    def to_safe_dict(self):
+        """Return user data without sensitive information"""
+        return {
+            'id': self.id,
+            'email': self.email,
+            'name': self.name,
+            'created_at': self.created_at,
+            'last_login': self.last_login
+        }
+    
     def check_password(self, password):
         if not self.password_hash:
             return False
