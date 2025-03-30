@@ -99,6 +99,40 @@ const Products = ({
           <Text fontSize='lg' color={textColor} fontWeight='bold' pb='.5rem'>
             {title}
           </Text>
+          <Flex justify="center" align="center" w="100%" mb={4}>
+            <HStack spacing={8}>
+              <HStack spacing={4}>
+                <Text>Rows per page:</Text>
+                <Select
+                  size="sm"
+                  width="70px"
+                  value={perPage}
+                  onChange={(e) => setPerPage(Number(e.target.value))}
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </Select>
+              </HStack>
+              
+              <HStack spacing={2}>
+                <IconButton
+                  size="sm"
+                  icon={<FaSortUp />}
+                  onClick={() => setPageNumber(prev => Math.max(1, prev - 1))}
+                  isDisabled={pageNumber === 1}
+                />
+                <Text>Page {pageNumber}</Text>
+                <IconButton
+                  size="sm"
+                  icon={<FaSortDown />}
+                  onClick={() => setPageNumber(prev => prev + 1)}
+                  isDisabled={data.length < perPage}
+                />
+              </HStack>
+            </HStack>
+          </Flex>
         </Flex>
       </CardHeader>
       <CardBody>
@@ -206,39 +240,6 @@ const Products = ({
                         })}
                     </Tbody>
                 </Table>
-            
-                <Flex justify="space-between" align="center" mt={4}>
-                    <HStack spacing={4}>
-                        <Text>Rows per page:</Text>
-                        <Select
-                        size="sm"
-                        width="70px"
-                        value={perPage}
-                        onChange={(e) => setPerPage(Number(e.target.value))}
-                        >
-                        <option value={5}>5</option>
-                        <option value={10}>10</option>
-                        <option value={20}>20</option>
-                        <option value={50}>50</option>
-                        </Select>
-                    </HStack>
-                
-                    <HStack spacing={2}>
-                        <IconButton
-                        size="sm"
-                        icon={<FaSortUp />}
-                        onClick={() => setPageNumber(prev => Math.max(1, prev - 1))}
-                        isDisabled={pageNumber === 1}
-                        />
-                        <Text>Page {pageNumber}</Text>
-                        <IconButton
-                        size="sm"
-                        icon={<FaSortDown />}
-                        onClick={() => setPageNumber(prev => prev + 1)}
-                        isDisabled={data.length < perPage}
-                        />
-                    </HStack>
-                </Flex>
             </>
         )}
       </CardBody>
