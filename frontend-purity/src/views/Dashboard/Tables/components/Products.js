@@ -103,6 +103,31 @@ const Products = ({
     onSearch(query);
   };
 
+  // Function to highlight search matches in text
+  const highlightSearchMatch = (text, query) => {
+    if (!query || !text) return text;
+    
+    const stringText = String(text);
+    const regex = new RegExp(`(${query})`, 'gi');
+    const parts = stringText.split(regex);
+    
+    if (parts.length <= 1) return text;
+    
+    return (
+      <>
+        {parts.map((part, i) => 
+          regex.test(part) ? (
+            <Box key={i} as="span" bg="yellow.200" fontWeight="bold" px="1" py="0" rounded="sm">
+              {part}
+            </Box>
+          ) : (
+            part
+          )
+        )}
+      </>
+    );
+  };
+
   return (
     <Card my='22px' overflowX={{ sm: "scroll", xl: "hidden" }}>
       <CardHeader p='6px 0px 22px 0px'>
@@ -226,17 +251,17 @@ const Products = ({
                                     onClick={() => handleViewDetails(row)}
                                     cursor="pointer"
                                 >
-                                    {row.title || "Untitled Product"}
+                                    {searchQuery ? highlightSearchMatch(row.title || "Untitled Product", searchQuery) : (row.title || "Untitled Product")}
                                 </Text>
                             </Th>
                             <Th>
                                 <Text fontSize="sm" color={textColor} fontWeight="bold">
-                                {row.sku || "N/A"}
+                                {searchQuery ? highlightSearchMatch(row.sku || "N/A", searchQuery) : (row.sku || "N/A")}
                                 </Text>
                             </Th>
                             <Th>
                                 <Text fontSize="sm" color={textColor} fontWeight="bold">
-                                ${(row.price || 0).toFixed(2)}
+                                {searchQuery ? highlightSearchMatch(`$${(row.price || 0).toFixed(2)}`, searchQuery) : `$${(row.price || 0).toFixed(2)}`}
                                 </Text>
                             </Th>
                             <Th>
@@ -288,16 +313,16 @@ const Products = ({
                   />
                 )}
                 <Text fontSize="lg" fontWeight="bold" mb="16px">
-                  {selectedProduct.title || "Untitled Product"}
+                  {searchQuery ? highlightSearchMatch(selectedProduct.title || "Untitled Product", searchQuery) : (selectedProduct.title || "Untitled Product")}
                 </Text>
                 <Text fontSize="md" mb="8px">
-                  <strong>Description:</strong> {selectedProduct.description || "No description available"}
+                  <strong>Description:</strong> {searchQuery ? highlightSearchMatch(selectedProduct.description || "No description available", searchQuery) : (selectedProduct.description || "No description available")}
                 </Text>
                 <Text fontSize="md" mb="8px">
-                  <strong>SKU:</strong> {selectedProduct.sku || "N/A"}
+                  <strong>SKU:</strong> {searchQuery ? highlightSearchMatch(selectedProduct.sku || "N/A", searchQuery) : (selectedProduct.sku || "N/A")}
                 </Text>
                 <Text fontSize="md" mb="8px">
-                  <strong>Price:</strong> ${(selectedProduct.price || 0).toFixed(2)}
+                  <strong>Price:</strong> {searchQuery ? highlightSearchMatch(`$${(selectedProduct.price || 0).toFixed(2)}`, searchQuery) : `$${(selectedProduct.price || 0).toFixed(2)}`}
                 </Text>
                 <Text fontSize="md" mb="8px">
                   <strong>Status:</strong>{" "}
