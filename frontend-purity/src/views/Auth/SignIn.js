@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 // Chakra imports
 import {
   Box,
@@ -15,11 +15,33 @@ import {
 } from "@chakra-ui/react";
 // Assets
 import signInImage from "assets/img/signInImage.png";
+import authService from "services/auth.service";
 
 function SignIn() {
   // Chakra color mode
   const titleColor = useColorModeValue("teal.300", "teal.200");
   const textColor = useColorModeValue("gray.400", "white");
+  
+  // Form state
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await authService.login({ email, password });
+      if (response.access_token) {
+        localStorage.setItem('access_token', response.access_token);
+        localStorage.setItem('refresh_token', response.refresh_token);
+        localStorage.setItem('user', JSON.stringify(response.user));
+        window.location.href = '/#/admin/dashboard';
+      }
+    } catch (error) {
+      setError(error.response?.data?.error || 'Login failed');
+    }
+  };
+
   return (
     <Flex position='relative' mb='40px'>
       <Flex
@@ -52,57 +74,70 @@ function SignIn() {
               fontSize='14px'>
               Enter your email and password to sign in
             </Text>
-            <FormControl>
-              <FormLabel ms='4px' fontSize='sm' fontWeight='normal'>
-                Email
-              </FormLabel>
-              <Input
-                borderRadius='15px'
-                mb='24px'
-                fontSize='sm'
-                type='text'
-                placeholder='Your email adress'
-                size='lg'
-              />
-              <FormLabel ms='4px' fontSize='sm' fontWeight='normal'>
-                Password
-              </FormLabel>
-              <Input
-                borderRadius='15px'
-                mb='36px'
-                fontSize='sm'
-                type='password'
-                placeholder='Your password'
-                size='lg'
-              />
-              <FormControl display='flex' alignItems='center'>
-                <Switch id='remember-login' colorScheme='teal' me='10px' />
-                <FormLabel
-                  htmlFor='remember-login'
-                  mb='0'
-                  ms='1'
-                  fontWeight='normal'>
-                  Remember me
+            <form onSubmit={handleSubmit}>
+              <FormControl>
+                <FormLabel ms='4px' fontSize='sm' fontWeight='normal'>
+                  Email
                 </FormLabel>
+                <Input
+                  borderRadius='15px'
+                  mb='24px'
+                  fontSize='sm'
+                  type='email'
+                  placeholder='Your email address'
+                  size='lg'
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+                <FormLabel ms='4px' fontSize='sm' fontWeight='normal'>
+                  Password
+                </FormLabel>
+                <Input
+                  borderRadius='15px'
+                  mb='36px'
+                  fontSize='sm'
+                  type='password'
+                  placeholder='Your password'
+                  size='lg'
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <FormControl display='flex' alignItems='center'>
+                  <Switch id='remember-login' colorScheme='teal' me='10px' />
+                  <FormLabel
+                    htmlFor='remember-login'
+                    mb='0'
+                    ms='1'
+                    fontWeight='normal'>
+                    Remember me
+                  </FormLabel>
+                </FormControl>
+                {error && (
+                  <Text color="red.500" mb="20px" fontSize="sm">
+                    {error}
+                  </Text>
+                )}
+                <Button
+                  fontSize='10px'
+                  type='submit'
+                  bg='teal.300'
+                  w='100%'
+                  h='45'
+                  mb='20px'
+                  color='white'
+                  mt='20px'
+                  _hover={{
+                    bg: "teal.200",
+                  }}
+                  _active={{
+                    bg: "teal.400",
+                  }}>
+                  SIGN IN
+                </Button>
               </FormControl>
-              <Button
-                fontSize='10px'
-                type='submit'
-                bg='teal.300'
-                w='100%'
-                h='45'
-                mb='20px'
-                color='white'
-                mt='20px'
-                _hover={{
-                  bg: "teal.200",
-                }}
-                _active={{
-                  bg: "teal.400",
-                }}>
-                SIGN IN
-              </Button>
-            </FormControl>
+            </form>
             <Flex
               flexDirection='column'
               justifyContent='center'
@@ -111,7 +146,12 @@ function SignIn() {
               mt='0px'>
               <Text color={textColor} fontWeight='medium'>
                 Don't have an account?
-                <Link color={titleColor} as='span' ms='5px' fontWeight='bold'>
+                <Link
+                  color={titleColor}
+                  as='span'
+                  ms='5px'
+                  fontWeight='bold'
+                  onClick={() => window.location.href = '/#/auth/signup'}>
                   Sign Up
                 </Link>
               </Text>

@@ -15,14 +15,42 @@ import {
 } from "@chakra-ui/react";
 // Assets
 import BgSignUp from "assets/img/BgSignUp.png";
-import React from "react";
+import React, { useState } from "react";
 import { FaApple, FaFacebook, FaGoogle } from "react-icons/fa";
+import authService from "services/auth.service";
 
 function SignUp() {
   const titleColor = useColorModeValue("teal.300", "teal.200");
   const textColor = useColorModeValue("gray.700", "white");
   const bgColor = useColorModeValue("white", "gray.700");
   const bgIcons = useColorModeValue("teal.200", "rgba(255, 255, 255, 0.5)");
+
+  // Form state
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [repeatPassword, setRepeatPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (password !== repeatPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    try {
+      const response = await authService.register({ email, password, name });
+      if (response.access_token) {
+        localStorage.setItem('access_token', response.access_token);
+        localStorage.setItem('refresh_token', response.refresh_token);
+        localStorage.setItem('user', JSON.stringify(response.user));
+        window.location.href = '/#/admin/dashboard';
+      }
+    } catch (error) {
+      setError(error.response?.data?.error || 'Registration failed');
+    }
+  };
+
   return (
     <Flex
       direction='column'
@@ -150,67 +178,98 @@ function SignUp() {
             mb='22px'>
             or
           </Text>
-          <FormControl>
-            <FormLabel ms='4px' fontSize='sm' fontWeight='normal'>
-              Name
-            </FormLabel>
-            <Input
-              fontSize='sm'
-              ms='4px'
-              borderRadius='15px'
-              type='text'
-              placeholder='Your full name'
-              mb='24px'
-              size='lg'
-            />
-            <FormLabel ms='4px' fontSize='sm' fontWeight='normal'>
-              Email
-            </FormLabel>
-            <Input
-              fontSize='sm'
-              ms='4px'
-              borderRadius='15px'
-              type='email'
-              placeholder='Your email address'
-              mb='24px'
-              size='lg'
-            />
-            <FormLabel ms='4px' fontSize='sm' fontWeight='normal'>
-              Password
-            </FormLabel>
-            <Input
-              fontSize='sm'
-              ms='4px'
-              borderRadius='15px'
-              type='password'
-              placeholder='Your password'
-              mb='24px'
-              size='lg'
-            />
-            <FormControl display='flex' alignItems='center' mb='24px'>
-              <Switch id='remember-login' colorScheme='teal' me='10px' />
-              <FormLabel htmlFor='remember-login' mb='0' fontWeight='normal'>
-                Remember me
+          <form onSubmit={handleSubmit}>
+            <FormControl>
+              <FormLabel ms='4px' fontSize='sm' fontWeight='normal'>
+                Name
               </FormLabel>
+              <Input
+                fontSize='sm'
+                ms='4px'
+                borderRadius='15px'
+                type='text'
+                placeholder='Your full name'
+                mb='24px'
+                size='lg'
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+              <FormLabel ms='4px' fontSize='sm' fontWeight='normal'>
+                Email
+              </FormLabel>
+              <Input
+                fontSize='sm'
+                ms='4px'
+                borderRadius='15px'
+                type='email'
+                placeholder='Your email address'
+                mb='24px'
+                size='lg'
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <FormLabel ms='4px' fontSize='sm' fontWeight='normal'>
+                Password
+              </FormLabel>
+              <Input
+                fontSize='sm'
+                ms='4px'
+                borderRadius='15px'
+                type='password'
+                placeholder='Your password'
+                mb='24px'
+                size='lg'
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <FormLabel ms='4px' fontSize='sm' fontWeight='normal'>
+                Repeat Password
+              </FormLabel>
+              <Input
+                fontSize='sm'
+                ms='4px'
+                borderRadius='15px'
+                type='password'
+                placeholder='Repeat your password'
+                mb='24px'
+                size='lg'
+                value={repeatPassword}
+                onChange={(e) => setRepeatPassword(e.target.value)}
+                required
+              />
+              <FormControl display='flex' alignItems='center' mb='24px'>
+                <Switch id='remember-login' colorScheme='teal' me='10px' />
+                <FormLabel htmlFor='remember-login' mb='0' fontWeight='normal'>
+                  Remember me
+                </FormLabel>
+              </FormControl>
+              {error && (
+                <Text color="red.500" mb="24px" fontSize="sm">
+                  {error}
+                </Text>
+              )}
+              <Button
+                type='submit'
+                bg='teal.300'
+                fontSize='10px'
+                color='white'
+                fontWeight='bold'
+                w='100%'
+                h='45'
+                mb='24px'
+                _hover={{
+                  bg: "teal.200",
+                }}
+                _active={{
+                  bg: "teal.400",
+                }}>
+                SIGN UP
+              </Button>
             </FormControl>
-            <Button
-              type='submit'
-              bg='teal.300'
-              fontSize='10px'
-              color='white'
-              fontWeight='bold'
-              w='100%'
-              h='45'
-              mb='24px'
-              _hover={{
-                bg: "teal.200",
-              }}
-              _active={{
-                bg: "teal.400",
-              }}>
-              SIGN UP
-            </Button>
-          </FormControl>
+          </form>
           <Flex
             flexDirection='column'
             justifyContent='center'
@@ -223,8 +282,8 @@ function SignUp() {
                 color={titleColor}
                 as='span'
                 ms='5px'
-                href='#'
-                fontWeight='bold'>
+                fontWeight='bold'
+                onClick={() => window.location.href = '/#/auth/signin'}>
                 Sign In
               </Link>
             </Text>

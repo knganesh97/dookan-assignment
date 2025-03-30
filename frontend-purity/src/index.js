@@ -23,12 +23,31 @@ import AuthLayout from "layouts/Auth.js";
 import AdminLayout from "layouts/Admin.js";
 import RTLLayout from "layouts/RTL.js";
 
+const checkAuth = () => {
+  const token = localStorage.getItem('access_token');
+  if (!token) return false;
+  
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const expiry = payload.exp * 1000;
+    return expiry > Date.now();
+  } catch (error) {
+    return false;
+  }
+};
+
 ReactDOM.render(
   <HashRouter>
     <Switch>
       <Route path={`/auth`} component={AuthLayout} />
-      <Route path={`/admin`} component={AdminLayout} />
-      <Route path={`/rtl`} component={RTLLayout} />
+      <Route 
+        path={`/admin`} 
+        render={props => checkAuth() ? <AdminLayout {...props} /> : <Redirect to="/auth/signin" />} 
+      />
+      <Route 
+        path={`/rtl`} 
+        render={props => checkAuth() ? <RTLLayout {...props} /> : <Redirect to="/auth/signin" />} 
+      />
       <Redirect from={`/`} to="/admin/dashboard" />
     </Switch>
   </HashRouter>,

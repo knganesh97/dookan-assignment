@@ -2,7 +2,7 @@
 import { Flex, Grid, useColorModeValue } from "@chakra-ui/react";
 import avatar4 from "assets/img/avatars/avatar4.png";
 import ProfileBgImage from "assets/img/ProfileBackground.png";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { FaCube, FaPenFancy } from "react-icons/fa";
 import { IoDocumentsSharp } from "react-icons/io5";
 import Conversations from "./components/Conversations";
@@ -19,14 +19,27 @@ function Profile() {
     "linear-gradient(112.83deg, rgba(255, 255, 255, 0.21) 0%, rgba(255, 255, 255, 0) 110.84%)"
   );
 
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      setUser(JSON.parse(userData));
+    }
+  }, []);
+
+  if (!user) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <Flex direction='column'>
       <Header
         backgroundHeader={ProfileBgImage}
         backgroundProfile={bgProfile}
         avatarImage={avatar4}
-        name={"Esthera Jackson"}
-        email={"esthera@simmmple.com"}
+        name={user.name || "User"}
+        email={user.email}
         tabs={[
           {
             name: "OVERVIEW",
@@ -51,12 +64,12 @@ function Profile() {
         <ProfileInformation
           title={"Profile Information"}
           description={
-            "Hi, I’m Esthera Jackson, Decisions: If you can’t decide, the answer is no. If two equally difficult paths, choose the one more painful in the short term (pain avoidance is creating an illusion of equality)."
+            `Hi, I'm ${user.name || "User"}, ${user.description || "Welcome to my profile!"}`
           }
-          name={"Esthera Jackson"}
-          mobile={"(44) 123 1234 123"}
-          email={"esthera@simmmple.com"}
-          location={"United States"}
+          name={user.name || "User"}
+          mobile={user.phone || "(44) 123 1234 123"}
+          email={user.email}
+          location={user.location || "United States"}
         />
         <Conversations title={"Conversations"} />
       </Grid>
