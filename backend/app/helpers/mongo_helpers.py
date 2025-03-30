@@ -71,12 +71,17 @@ def get_mongo_products(mongo, sort_field='created_at', sort_order='desc', page=1
         # Build query
         query = {'is_deleted': False}
         if search_query:
-            # If search query matches price format (e.g. "19.97"), search by price_text
-            if search_query.replace(".", "").isdigit() and search_query.count(".") <= 1:
-                query['price_text'] = search_query
-            else:
-                # Otherwise do text search
-                query['$text'] = {'$search': search_query}
+            # Use regex for case-insensitive substring matching
+            regex_pattern = {'$regex': search_query, '$options': 'i'}
+            query = {
+                'is_deleted': False,
+                '$or': [
+                    {'title': regex_pattern},
+                    {'sku': regex_pattern},
+                    {'price_text': regex_pattern},
+                    {'currency': regex_pattern}
+                ]
+            }
         
         # Get total count for pagination
         total_count = mongo.products.count_documents(query)
