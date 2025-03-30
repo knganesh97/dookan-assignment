@@ -15,17 +15,17 @@ services:
       - mongodb
       - postgres
 
-  frontend:
+  frontend-purity:
     build:
-      context: ./frontend
+      context: ./frontend-purity
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
     volumes:
-      - ./frontend:/app
+      - ./frontend-purity:/app
       - /app/node_modules
     env_file:
-      - ./frontend/.env
+      - ./frontend-purity/.env
     depends_on:
       - backend
 

@@ -35,7 +35,7 @@ def create_app(config_name='default'):
     # Initialize extensions
     CORS(app, 
          resources={r"/api/*": {
-             "origins": ["http://localhost:3000"],
+             "origins": ["http://localhost:3000", "http://localhost:3001", "http://frontend:3000"],
              "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
              "allow_headers": ["Content-Type", "Authorization", "Accept"],
              "supports_credentials": True,
