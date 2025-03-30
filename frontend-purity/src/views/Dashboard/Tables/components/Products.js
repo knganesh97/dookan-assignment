@@ -31,7 +31,6 @@ import {
   InputLeftElement,
   FormControl,
   SimpleGrid,
-  VStack,
 } from "@chakra-ui/react";
 import { SearchIcon } from "@chakra-ui/icons";
 import moment from "moment";
