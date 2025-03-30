@@ -26,7 +26,12 @@ import {
   Select,
   HStack,
   IconButton,
+  Input,
+  InputGroup,
+  InputLeftElement,
+  FormControl,
 } from "@chakra-ui/react";
+import { SearchIcon } from "@chakra-ui/icons";
 import moment from "moment";
 import { FaEdit, FaTrash, FaSort, FaSortUp, FaSortDown } from "react-icons/fa";
 // Custom components
@@ -37,7 +42,7 @@ import CardHeader from "components/Card/CardHeader.js";
 const Products = ({ 
     title, captions, data = [], loading = false, error = null, 
     setPageNumber, setPerPage, setSortBy, setSortOrder,
-    pageNumber, perPage, sortBy, sortOrder
+    pageNumber, perPage, sortBy, sortOrder, onSearch, searchQuery
 }) => {
   const textColor = useColorModeValue("gray.700", "white");
   const colorStatus = useColorModeValue("white", "gray.400");
@@ -92,6 +97,12 @@ const Products = ({
     return sortOrder === 'asc' ? <FaSortUp /> : <FaSortDown />;
   };
 
+  const handleSearch = (event) => {
+    event.preventDefault();
+    const query = event.target.search.value;
+    onSearch(query);
+  };
+
   return (
     <Card my='22px' overflowX={{ sm: "scroll", xl: "hidden" }}>
       <CardHeader p='6px 0px 22px 0px'>
@@ -115,6 +126,19 @@ const Products = ({
                   <option value={50}>50</option>
                 </Select>
               </HStack>
+              
+              <FormControl as="form" onSubmit={handleSearch}>
+                <InputGroup size="sm" width="200px">
+                  <InputLeftElement pointerEvents="none">
+                    <SearchIcon color="gray.400" />
+                  </InputLeftElement>
+                  <Input 
+                    name="search"
+                    placeholder="Search products..." 
+                    defaultValue={searchQuery}
+                  />
+                </InputGroup>
+              </FormControl>
               
               <HStack spacing={2}>
                 <IconButton

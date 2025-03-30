@@ -50,6 +50,13 @@ def create_app(config_name='default'):
     # Create unique index on email field
     with app.app_context():
         app.mongo.users.create_index([('email', 1)], unique=True)
+        # Create text index for products search
+        app.mongo.products.create_index([
+            ("title", "text"),
+            ("sku", "text"),
+            ("price_text", "text"),
+            ("currency", "text")
+        ])
     
     # Register blueprints
     from .routes.auth import auth_bp

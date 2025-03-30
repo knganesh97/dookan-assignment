@@ -62,21 +62,30 @@ def delete_mongo_product(mongo, product_id):
     except Exception as e:
         raise Exception(f"MongoDB deletion failed: {str(e)}")
 
-def get_mongo_products(mongo, sort_field='created_at', sort_order='desc', page=1, per_page=20):
-    """Get paginated and sorted products from MongoDB"""
+def get_mongo_products(mongo, sort_field='created_at', sort_order='desc', page=1, per_page=20, search_query=None):
+    """Get paginated and sorted products from MongoDB with optional search"""
     try:
         # Convert sort order to MongoDB format (1 for ascending, -1 for descending)
         sort_direction = -1 if sort_order == 'desc' else 1
         
+        # Build query
+        query = {'is_deleted': False}
+        if search_query:
+            # If search query matches price format (e.g. "19.97"), search by price_text
+            if search_query.replace(".", "").isdigit() and search_query.count(".") <= 1:
+                query['price_text'] = search_query
+            else:
+                # Otherwise do text search
+                query['$text'] = {'$search': search_query}
+        
         # Get total count for pagination
-        total_count = mongo.products.count_documents({'is_deleted': False})
+        total_count = mongo.products.count_documents(query)
         
         # Get paginated and sorted results
-        products = mongo.products.find(
-            {'is_deleted': False}
-        ).sort(sort_field, sort_direction) \
-         .skip((page - 1) * per_page) \
-         .limit(per_page)
+        products = mongo.products.find(query) \
+            .sort(sort_field, sort_direction) \
+            .skip((page - 1) * per_page) \
+            .limit(per_page)
         
         return {
             'products': [Product.from_dict(p) for p in products],

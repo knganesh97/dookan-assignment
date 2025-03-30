@@ -61,25 +61,27 @@ def get_products():
     if request.method == 'OPTIONS':
         return '', 204
         
-    """List all products with optional sorting"""
+    """List all products with optional sorting and search"""
     try:
         # Validate query parameters
         validation_errors = ProductValidator.validate_query_params(request.args)
         if validation_errors:
             return jsonify({'errors': validation_errors}), 400
             
-        # Get sort parameters from query string
+        # Get parameters from query string
         sort_field = request.args.get('sort_by', 'created_at')
         sort_order = request.args.get('order', 'desc')
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 20))
+        search_query = request.args.get('q')
         
         result = get_mongo_products(
             current_app.mongo,
             sort_field=sort_field,
             sort_order=sort_order,
             page=page,
-            per_page=per_page
+            per_page=per_page,
+            search_query=search_query
         )
         
         return jsonify({

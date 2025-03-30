@@ -15,6 +15,29 @@ function Tables() {
   const [perPage, setPerPage] = useState(10);
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const fetchProducts = async (params = {}) => {
+    try {
+      setLoading(true);
+      const response = await productService.getProducts({
+        ...params,
+        q: searchQuery
+      });
+      
+      if (response?.products) {
+        setProducts(response.products);
+      } else {
+        setProducts([]);
+      }
+    } catch (err) {
+      console.error("Error fetching products:", err);
+      setError(err.message || "Failed to fetch products");
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const params = {
@@ -22,32 +45,14 @@ function Tables() {
       per_page: perPage,
       sort_by: sortBy,
       order: sortOrder
-    }
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        const response = await productService.getProducts(params);
-        console.log('API Response:', response);
-        
-        // The response is already unwrapped by the interceptor
-        if (response?.products) {
-          console.log('Setting products:', response.products);
-          setProducts(response.products);
-        } else {
-          console.log('No products found in response');
-          setProducts([]);
-        }
-      } catch (err) {
-        console.error("Error fetching products:", err);
-        setError(err.message || "Failed to fetch products");
-        setProducts([]);
-      } finally {
-        setLoading(false);
-      }
     };
+    fetchProducts(params);
+  }, [pageNumber, perPage, sortBy, sortOrder, searchQuery]);
 
-    fetchProducts();
-  }, [pageNumber, perPage, sortBy, sortOrder]);
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+    setPageNumber(1); // Reset to first page when searching
+  };
 
   console.log('Current products state:', products);
 
@@ -67,6 +72,8 @@ function Tables() {
         perPage={perPage}
         sortBy={sortBy}
         sortOrder={sortOrder}
+        onSearch={handleSearch}
+        searchQuery={searchQuery}
       />
       <Authors
         title={"Authors Table"}

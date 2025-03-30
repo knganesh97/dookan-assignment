@@ -27,7 +27,8 @@ const productService = {
         page: params.page || 1,
         per_page: params.per_page || 20,
         sort_by: params.sort_by || 'created_at',
-        order: params.order || 'desc'
+        order: params.order || 'desc',
+        ...(params.q && { q: params.q }) // Add search query if present
       });
 
       const response = await api.get(`/products?${queryParams}`);
@@ -87,7 +88,7 @@ const productService = {
     } catch (error) {
       throw error;
     }
-  }
+  },
 };
 
 export default productService; 

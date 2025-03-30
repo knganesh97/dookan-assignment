@@ -2,10 +2,12 @@ from datetime import datetime, timezone
 from bson import ObjectId
 
 class Product:
-    def __init__(self, title, description, price, sku, image_url=None, shopify_id=None, status='draft'):
+    def __init__(self, title, description, price, sku, image_url=None, shopify_id=None, status='draft', currency='USD'):
         self.title = title
         self.description = description
         self.price = float(price)  # Ensure price is stored as float
+        self.currency = currency
+        self.price_text = f"{float(price):.2f}"  # Store price as string without currency
         self.sku = sku
         self.image_url = image_url
         self.thumbnail_url = image_url  # Can be processed version of main image
@@ -25,7 +27,8 @@ class Product:
             data['sku'],
             data.get('image_url'),
             data.get('shopify_id'),
-            data.get('status', 'draft')
+            data.get('status', 'draft'),
+            data.get('currency', 'USD')
         )
         product.thumbnail_url = data.get('thumbnail_url', data.get('image_url'))
         product.created_at = data.get('created_at', datetime.now(timezone.utc))
@@ -40,6 +43,8 @@ class Product:
             'title': self.title,
             'description': self.description,
             'price': self.price,
+            'currency': self.currency,
+            'price_text': self.price_text,
             'sku': self.sku,
             'image_url': self.image_url,
             'thumbnail_url': self.thumbnail_url,
@@ -58,6 +63,7 @@ class Product:
             'title': self.title,
             'sku': self.sku,
             'price': self.price,
+            'currency': self.currency,
             'thumbnail_url': self.thumbnail_url,
             'status': self.status
         }
@@ -69,6 +75,7 @@ class Product:
             'title': self.title,
             'description': self.description,
             'price': self.price,
+            'currency': self.currency,
             'image_url': self.image_url
         }
     
@@ -79,7 +86,11 @@ class Product:
     def update(self, data):
         self.title = data.get('title', self.title)
         self.description = data.get('description', self.description)
-        self.price = float(data.get('price', self.price))
+        if 'price' in data:
+            self.price = float(data['price'])
+            self.price_text = f"{self.price:.2f}"
+        if 'currency' in data:
+            self.currency = data['currency']
         self.sku = data.get('sku', self.sku)
         self.image_url = data.get('image_url', self.image_url)
         self.thumbnail_url = data.get('thumbnail_url', data.get('image_url', self.thumbnail_url))
