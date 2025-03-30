@@ -30,6 +30,8 @@ import {
   InputGroup,
   InputLeftElement,
   FormControl,
+  SimpleGrid,
+  VStack,
 } from "@chakra-ui/react";
 import { SearchIcon } from "@chakra-ui/icons";
 import moment from "moment";
@@ -135,10 +137,10 @@ const Products = ({
           <Text fontSize='lg' color={textColor} fontWeight='bold' pb='.5rem'>
             {title}
           </Text>
-          <Flex justify="center" align="center" w="100%" mb={4}>
-            <HStack spacing={8}>
-              <HStack spacing={4}>
-                <Text>Rows per page:</Text>
+          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={{ base: 4, md: 6 }} w="100%" mb={4}>
+            <Box>
+              <HStack spacing={4} justifyContent="flex-start" h="100%" alignItems="center">
+                <Text whiteSpace="nowrap" fontSize="sm">Rows per page:</Text>
                 <Select
                   size="sm"
                   width="70px"
@@ -151,37 +153,53 @@ const Products = ({
                   <option value={50}>50</option>
                 </Select>
               </HStack>
-              
+            </Box>
+            
+            <Box>
               <FormControl as="form" onSubmit={handleSearch}>
-                <InputGroup size="sm" width="200px">
-                  <InputLeftElement pointerEvents="none">
-                    <SearchIcon color="gray.400" />
-                  </InputLeftElement>
-                  <Input 
-                    name="search"
-                    placeholder="Search products..." 
-                    defaultValue={searchQuery}
-                  />
-                </InputGroup>
+                <Flex>
+                  <InputGroup size="sm">
+                    <InputLeftElement pointerEvents="none">
+                      <SearchIcon color="gray.400" />
+                    </InputLeftElement>
+                    <Input 
+                      name="search"
+                      placeholder="Search products..." 
+                      defaultValue={searchQuery}
+                    />
+                  </InputGroup>
+                  <Button
+                    ml={2}
+                    size="sm"
+                    colorScheme="blue"
+                    type="submit"
+                  >
+                    Search
+                  </Button>
+                </Flex>
               </FormControl>
-              
+            </Box>
+            
+            <Flex justify={{ base: "flex-start", md: "flex-end" }} align="center" h="100%">
               <HStack spacing={2}>
                 <IconButton
                   size="sm"
                   icon={<FaSortUp />}
                   onClick={() => setPageNumber(prev => Math.max(1, prev - 1))}
                   isDisabled={pageNumber === 1}
+                  aria-label="Previous page"
                 />
-                <Text>Page {pageNumber}</Text>
+                <Text whiteSpace="nowrap" fontSize="sm">Page {pageNumber}</Text>
                 <IconButton
                   size="sm"
                   icon={<FaSortDown />}
                   onClick={() => setPageNumber(prev => prev + 1)}
                   isDisabled={data.length < perPage}
+                  aria-label="Next page"
                 />
               </HStack>
-            </HStack>
-          </Flex>
+            </Flex>
+          </SimpleGrid>
         </Flex>
       </CardHeader>
       <CardBody>
