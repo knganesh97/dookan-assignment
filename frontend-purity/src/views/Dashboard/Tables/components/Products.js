@@ -41,7 +41,7 @@ import CardBody from "components/Card/CardBody.js";
 import CardHeader from "components/Card/CardHeader.js";
 
 const Products = ({ 
-    title, captions, data = [], loading = false, error = null, 
+    title, captions = [], data = [], loading = false, error = null, 
     setPageNumber, setPerPage, setSortBy, setSortOrder,
     pageNumber, perPage, sortBy, sortOrder, onSearch, searchQuery
 }) => {
@@ -108,25 +108,30 @@ const Products = ({
   const highlightSearchMatch = (text, query) => {
     if (!query || !text) return text;
     
-    const stringText = String(text);
-    const regex = new RegExp(`(${query})`, 'gi');
-    const parts = stringText.split(regex);
-    
-    if (parts.length <= 1) return text;
-    
-    return (
-      <>
-        {parts.map((part, i) => 
-          regex.test(part) ? (
-            <Box key={i} as="span" bg="yellow.200" fontWeight="bold" px="1" py="0" rounded="sm">
-              {part}
-            </Box>
-          ) : (
-            part
-          )
-        )}
-      </>
-    );
+    try {
+      const stringText = String(text);
+      const regex = new RegExp(`(${query})`, 'gi');
+      const parts = stringText.split(regex);
+      
+      if (!parts || parts.length <= 1) return text;
+      
+      return (
+        <>
+          {parts.map((part, i) => 
+            regex.test(part) ? (
+              <Box key={i} as="span" bg="yellow.200" fontWeight="bold" px="1" py="0" rounded="sm">
+                {part}
+              </Box>
+            ) : (
+              part
+            )
+          )}
+        </>
+      );
+    } catch (error) {
+      console.error("Error in highlightSearchMatch:", error);
+      return text;
+    }
   };
 
   return (
@@ -193,7 +198,7 @@ const Products = ({
                   size="sm"
                   icon={<FaSortDown />}
                   onClick={() => setPageNumber(prev => prev + 1)}
-                  isDisabled={data.length < perPage}
+                  isDisabled={!data || !Array.isArray(data) || data.length < perPage}
                   aria-label="Next page"
                 />
               </HStack>
@@ -211,7 +216,7 @@ const Products = ({
             <AlertIcon />
             {error}
           </Alert>
-        ) : data.length === 0 ? (
+        ) : !data || !Array.isArray(data) || data.length === 0 ? (
           <Center py={8}>
             <Text color={textColor}>No products found</Text>
           </Center>
@@ -220,7 +225,7 @@ const Products = ({
                 <Table variant='simple' color={textColor}>
                     <Thead>
                         <Tr my='.8rem' pl='0px'>
-                        {captions.map((caption, idx) => {
+                        {captions && Array.isArray(captions) && captions.map((caption, idx) => {
                             const isSortable = ['title', 'sku', 'price'].includes(caption.toLowerCase());
                             return (
                             <Th 
@@ -242,15 +247,15 @@ const Products = ({
                         </Tr>
                     </Thead>
                     <Tbody>
-                        {data.map((row) => {
+                        {data && Array.isArray(data) && data.map((row, idx) => {
                         return (
-                            <Tr key={row.id || row._id}>
+                            <Tr key={row?.id || row?._id || idx}>
                             <Th>
                                 <Flex align="center" py=".8rem" minWidth="100%" flexWrap="nowrap">
-                                {row.image_url && (
+                                {row?.image_url && (
                                     <Image
-                                    src={row.image_url}
-                                    alt={row.title || "Product Image"}
+                                    src={row?.image_url}
+                                    alt={row?.title || "Product Image"}
                                     width="40px"
                                     height="40px"
                                     borderRadius="8px"
@@ -268,17 +273,17 @@ const Products = ({
                                     onClick={() => handleViewDetails(row)}
                                     cursor="pointer"
                                 >
-                                    {searchQuery ? highlightSearchMatch(row.title || "Untitled Product", searchQuery) : (row.title || "Untitled Product")}
+                                    {searchQuery ? highlightSearchMatch(row?.title || "Untitled Product", searchQuery) : (row?.title || "Untitled Product")}
                                 </Text>
                             </Th>
                             <Th>
                                 <Text fontSize="sm" color={textColor} fontWeight="bold">
-                                {searchQuery ? highlightSearchMatch(row.sku || "N/A", searchQuery) : (row.sku || "N/A")}
+                                {searchQuery ? highlightSearchMatch(row?.sku || "N/A", searchQuery) : (row?.sku || "N/A")}
                                 </Text>
                             </Th>
                             <Th>
                                 <Text fontSize="sm" color={textColor} fontWeight="bold">
-                                {searchQuery ? highlightSearchMatch(`$${(row.price || 0).toFixed(2)}`, searchQuery) : `$${(row.price || 0).toFixed(2)}`}
+                                {searchQuery ? highlightSearchMatch(`$${(row?.price || 0).toFixed(2)}`, searchQuery) : `$${(row?.price || 0).toFixed(2)}`}
                                 </Text>
                             </Th>
                             <Th>
@@ -318,10 +323,10 @@ const Products = ({
           <ModalBody pb={6}>
             {selectedProduct && (
               <Box>
-                {selectedProduct.image_url && (
+                {selectedProduct?.image_url && (
                   <Image
                     src={selectedProduct.image_url}
-                    alt={selectedProduct.title || "Product Image"}
+                    alt={selectedProduct?.title || "Product Image"}
                     width="100%"
                     height="300px"
                     objectFit="cover"
@@ -330,46 +335,46 @@ const Products = ({
                   />
                 )}
                 <Text fontSize="lg" fontWeight="bold" mb="16px">
-                  {searchQuery ? highlightSearchMatch(selectedProduct.title || "Untitled Product", searchQuery) : (selectedProduct.title || "Untitled Product")}
+                  {searchQuery ? highlightSearchMatch(selectedProduct?.title || "Untitled Product", searchQuery) : (selectedProduct?.title || "Untitled Product")}
                 </Text>
                 <Text fontSize="md" mb="8px">
-                  <strong>Description:</strong> {searchQuery ? highlightSearchMatch(selectedProduct.description || "No description available", searchQuery) : (selectedProduct.description || "No description available")}
+                  <strong>Description:</strong> {searchQuery ? highlightSearchMatch(selectedProduct?.description || "No description available", searchQuery) : (selectedProduct?.description || "No description available")}
                 </Text>
                 <Text fontSize="md" mb="8px">
-                  <strong>SKU:</strong> {searchQuery ? highlightSearchMatch(selectedProduct.sku || "N/A", searchQuery) : (selectedProduct.sku || "N/A")}
+                  <strong>SKU:</strong> {searchQuery ? highlightSearchMatch(selectedProduct?.sku || "N/A", searchQuery) : (selectedProduct?.sku || "N/A")}
                 </Text>
                 <Text fontSize="md" mb="8px">
-                  <strong>Price:</strong> {searchQuery ? highlightSearchMatch(`$${(selectedProduct.price || 0).toFixed(2)}`, searchQuery) : `$${(selectedProduct.price || 0).toFixed(2)}`}
+                  <strong>Price:</strong> {searchQuery ? highlightSearchMatch(`$${(selectedProduct?.price || 0).toFixed(2)}`, searchQuery) : `$${(selectedProduct?.price || 0).toFixed(2)}`}
                 </Text>
                 <Text fontSize="md" mb="8px">
                   <strong>Status:</strong>{" "}
                   <Badge
-                    bg={getStatusColor(selectedProduct.status)}
+                    bg={getStatusColor(selectedProduct?.status)}
                     color={colorStatus}
                     fontSize="14px"
                     p="2px 8px"
                     borderRadius="6px"
                   >
-                    {selectedProduct.status || "unknown"}
+                    {selectedProduct?.status || "unknown"}
                   </Badge>
                 </Text>
                 <Text fontSize="md" mb="8px">
                   <strong>Created:</strong>{" "}
-                  {formatDateTime(selectedProduct.created_at)}
+                  {formatDateTime(selectedProduct?.created_at)}
                 </Text>
                 <Text fontSize="md" mb="8px">
                   <strong>Last Updated:</strong>{" "}
-                  {formatDateTime(selectedProduct.updated_at)}
+                  {formatDateTime(selectedProduct?.updated_at)}
                 </Text>
-                {selectedProduct.last_sync && (
+                {selectedProduct?.last_sync && (
                   <Text fontSize="md" mb="8px">
                     <strong>Last Sync:</strong>{" "}
-                    {formatDateTime(selectedProduct.last_sync)}
+                    {formatDateTime(selectedProduct?.last_sync)}
                   </Text>
                 )}
-                {selectedProduct.shopify_id && (
+                {selectedProduct?.shopify_id && (
                   <Text fontSize="md" mb="8px">
-                    <strong>Shopify ID:</strong> {selectedProduct.shopify_id}
+                    <strong>Shopify ID:</strong> {selectedProduct?.shopify_id}
                   </Text>
                 )}
               </Box>

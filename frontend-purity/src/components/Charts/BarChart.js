@@ -28,13 +28,15 @@ class BarChart extends Component {
         bg="linear-gradient(81.62deg, #313860 2.25%, #151928 79.87%)"
         position="relative"
       >
-        <Chart
-          options={this.state.chartOptions}
-          series={this.state.chartData}
-          type="bar"
-          width="100%"
-          height="100%"
-        />
+        {this.state.chartData.length > 0 && this.state.chartOptions && (
+          <Chart
+            options={this.state.chartOptions}
+            series={this.state.chartData}
+            type="bar"
+            width="100%"
+            height="100%"
+          />
+        )}
       </Card>
     );
   }

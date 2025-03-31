@@ -25,9 +25,10 @@ function Tables() {
         q: searchQuery
       });
       
-      if (response?.products) {
+      if (response?.products && Array.isArray(response.products)) {
         setProducts(response.products);
       } else {
+        console.warn("Received invalid products data:", response);
         setProducts([]);
       }
     } catch (err) {
