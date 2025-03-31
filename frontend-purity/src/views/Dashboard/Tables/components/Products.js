@@ -26,6 +26,12 @@ import {
   FormControl,
   SimpleGrid,
   useToast,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
 } from "@chakra-ui/react";
 import { SearchIcon, AddIcon } from "@chakra-ui/icons";
 import { FaEdit, FaTrash, FaSort, FaSortUp, FaSortDown } from "react-icons/fa";
@@ -35,6 +41,7 @@ import CardBody from "components/Card/CardBody.js";
 import CardHeader from "components/Card/CardHeader.js";
 import ViewProductModal from "./ViewProductModal";
 import EditProductModal from "./EditProductModal";
+import productService from "services/product.service";
 
 const Products = ({ 
     title, captions = [], data = [], loading = false, error = null, 
@@ -43,6 +50,8 @@ const Products = ({
     onProductCreated, onProductUpdated,
 }) => {
   const textColor = useColorModeValue("gray.700", "white");
+  const toast = useToast();
+  const cancelRef = React.useRef();
   
   // View product modal state
   const { 
@@ -69,6 +78,15 @@ const Products = ({
     image_url: ""
   };
 
+  // Delete product confirmation dialog
+  const {
+    isOpen: isDeleteDialogOpen,
+    onOpen: onDeleteDialogOpen,
+    onClose: onDeleteDialogClose
+  } = useDisclosure();
+  const [productToDelete, setProductToDelete] = React.useState(null);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+
   const handleViewDetails = (product) => {
     setSelectedProduct(product);
     onViewModalOpen();
@@ -87,8 +105,57 @@ const Products = ({
   };
 
   const handleDelete = (product) => {
-    // TODO: Implement delete functionality
-    console.log('Delete product:', product);
+    // Open the confirmation dialog
+    setProductToDelete(product);
+    onDeleteDialogOpen();
+  };
+
+  const confirmDelete = async () => {
+    if (!productToDelete || !productToDelete.id) {
+      toast({
+        title: "Error",
+        description: "Product ID is missing",
+        status: "error",
+        duration: 5000,
+        isClosable: true
+      });
+      onDeleteDialogClose();
+      return;
+    }
+
+    setIsDeleting(true);
+    
+    try {
+      // Call the delete API
+      await productService.deleteProduct(productToDelete.id);
+      
+      // Show success toast
+      toast({
+        title: "Product deleted",
+        description: `"${productToDelete.title}" has been deleted successfully`,
+        status: "success",
+        duration: 5000,
+        isClosable: true
+      });
+      
+      // Refresh the products list
+      if (onProductUpdated) {
+        onProductUpdated();
+      }
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      // Show error toast
+      toast({
+        title: "Error deleting product",
+        description: error.response?.data?.error || "An unexpected error occurred",
+        status: "error",
+        duration: 5000,
+        isClosable: true
+      });
+    } finally {
+      setIsDeleting(false);
+      onDeleteDialogClose();
+    }
   };
 
   const handleSort = (column) => {
@@ -346,6 +413,50 @@ const Products = ({
         onProductUpdated={isCreateMode ? onProductCreated : (onProductUpdated || onProductCreated)}
         isCreateMode={isCreateMode}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        isOpen={isDeleteDialogOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={onDeleteDialogClose}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Delete Product
+            </AlertDialogHeader>
+
+            <AlertDialogBody>
+              {productToDelete ? (
+                <>
+                  Are you sure you want to delete <strong>{productToDelete.title}</strong>?
+                  <Text mt={2} color="red.600">
+                    This action cannot be undone. This will permanently delete the product 
+                    from both this system and Shopify.
+                  </Text>
+                </>
+              ) : (
+                "Are you sure you want to delete this product?"
+              )}
+            </AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button ref={cancelRef} onClick={onDeleteDialogClose}>
+                Cancel
+              </Button>
+              <Button 
+                colorScheme="red" 
+                onClick={confirmDelete} 
+                ml={3}
+                isLoading={isDeleting}
+                loadingText="Deleting"
+              >
+                Delete
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </Card>
   );
 }
