@@ -122,7 +122,7 @@ class ProductValidator:
         return errors
 
     @staticmethod
-    def validate_image_url(url: str) -> List[str]:
+    def validate_image_url(url: str, allow_empty=False) -> List[str]:
         errors = []
         rules = ProductValidator.BUSINESS_RULES['image_url']
         
@@ -132,9 +132,10 @@ class ProductValidator:
             
         url = url.strip()
         if not url:
-            errors.append("Image URL cannot be empty")
+            if not allow_empty:
+                errors.append("Image URL cannot be empty")
             return errors
-            
+        
         try:
             parsed = urlparse(url)
             if not parsed.scheme or not parsed.netloc:
@@ -206,7 +207,8 @@ class ProductValidator:
             errors.extend(cls.validate_sku(data['sku']))
             
         if 'image_url' in data:
-            errors.extend(cls.validate_image_url(data['image_url']))
+            # Allow empty image URLs in updates
+            errors.extend(cls.validate_image_url(data['image_url'], allow_empty=True))
             
         if 'status' in data:
             errors.extend(cls.validate_status(data['status']))

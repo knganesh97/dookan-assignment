@@ -55,6 +55,17 @@ function Tables() {
     setPageNumber(1); // Reset to first page when searching
   };
 
+  // Handler for product creation or update
+  const handleProductUpdated = () => {
+    // Refresh the products list
+    fetchProducts({
+      page: pageNumber,
+      per_page: perPage,
+      sort_by: sortBy,
+      order: sortOrder
+    });
+  };
+
   console.log('Current products state:', products);
 
   return (
@@ -75,6 +86,8 @@ function Tables() {
         sortOrder={sortOrder}
         onSearch={handleSearch}
         searchQuery={searchQuery}
+        onProductCreated={handleProductUpdated}
+        onProductUpdated={handleProductUpdated}
       />
       <Authors
         title={"Authors Table"}
