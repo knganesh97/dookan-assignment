@@ -10,6 +10,7 @@ import Header from "./components/Header";
 import PlatformSettings from "./components/PlatformSettings";
 import ProfileInformation from "./components/ProfileInformation";
 import Projects from "./components/Projects";
+import authService from "services/auth.service";
 
 function Profile() {
   // Chakra color mode
@@ -22,10 +23,14 @@ function Profile() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
+    const fetchUser = async () => {
+      const userData = await authService.getCurrentUser();
+      if (userData) {
+        setUser(userData);
+      }
+    };
+    
+    fetchUser();
   }, []);
 
   if (!user) {

@@ -22,18 +22,10 @@ import { HashRouter, Route, Switch, Redirect } from "react-router-dom";
 import AuthLayout from "layouts/Auth.js";
 import AdminLayout from "layouts/Admin.js";
 import RTLLayout from "layouts/RTL.js";
+import authService from "services/auth.service";
 
 const checkAuth = () => {
-  const token = localStorage.getItem('access_token');
-  if (!token) return false;
-  
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const expiry = payload.exp * 1000;
-    return expiry > Date.now();
-  } catch (error) {
-    return false;
-  }
+  return authService.isAuthenticated();
 };
 
 ReactDOM.render(

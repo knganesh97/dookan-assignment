@@ -30,11 +30,11 @@ function SignIn() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Login using cookies - JWT will be stored as HttpOnly cookies by the server
       const response = await authService.login({ email, password });
-      if (response.access_token) {
-        localStorage.setItem('access_token', response.access_token);
-        localStorage.setItem('refresh_token', response.refresh_token);
-        localStorage.setItem('user', JSON.stringify(response.user));
+      
+      // If login is successful, redirect to dashboard
+      if (response.user) {
         window.location.href = '/#/admin/dashboard';
       }
     } catch (error) {

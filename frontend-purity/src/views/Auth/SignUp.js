@@ -39,11 +39,11 @@ function SignUp() {
       return;
     }
     try {
+      // Register using cookies - JWT will be stored as HttpOnly cookies by the server
       const response = await authService.register({ email, password, name });
-      if (response.access_token) {
-        localStorage.setItem('access_token', response.access_token);
-        localStorage.setItem('refresh_token', response.refresh_token);
-        localStorage.setItem('user', JSON.stringify(response.user));
+      
+      // If registration is successful, redirect to dashboard
+      if (response.user) {
         window.location.href = '/#/admin/dashboard';
       }
     } catch (error) {

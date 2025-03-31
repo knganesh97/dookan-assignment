@@ -1,5 +1,8 @@
 from flask import Blueprint, request, jsonify, current_app
-from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import (
+    create_access_token, create_refresh_token, jwt_required, get_jwt_identity,
+    set_access_cookies, set_refresh_cookies, unset_jwt_cookies
+)
 from datetime import datetime, timezone
 from ..models.user import User
 from bson import ObjectId
@@ -44,12 +47,18 @@ def register():
         refresh_token = create_refresh_token(identity=str(user._id))
         
         logger.info(f"User registered successfully: {data['email']}")
-        return jsonify({
+        
+        # Create response
+        response = jsonify({
             'message': 'User registered successfully',
-            'access_token': access_token,
-            'refresh_token': refresh_token,
             'user': user.to_safe_dict()
-        }), 201
+        })
+        
+        # Set cookies in the response
+        set_access_cookies(response, access_token)
+        set_refresh_cookies(response, refresh_token)
+        
+        return response, 201
     except ValueError as e:
         logger.warning(f"Registration failed - validation error: {str(e)}")
         return jsonify({'error': str(e)}), 400
@@ -91,11 +100,17 @@ def login():
         refresh_token = create_refresh_token(identity=str(user._id))
         
         logger.info(f"User logged in successfully: {data['email']}")
-        return jsonify({
-            'access_token': access_token,
-            'refresh_token': refresh_token,
+        
+        # Create response
+        response = jsonify({
             'user': user.to_safe_dict()
         })
+        
+        # Set cookies in the response
+        set_access_cookies(response, access_token)
+        set_refresh_cookies(response, refresh_token)
+        
+        return response
     except ValueError as e:
         logger.warning(f"Login failed - validation error: {str(e)}")
         return jsonify({'error': str(e)}), 400
@@ -108,7 +123,17 @@ def login():
 def refresh():
     current_user_id = get_jwt_identity()
     access_token = create_access_token(identity=current_user_id)
-    return jsonify({'access_token': access_token})
+    
+    response = jsonify({'status': 'success'})
+    set_access_cookies(response, access_token)
+    
+    return response
+
+@auth_bp.route('/logout', methods=['POST'])
+def logout():
+    response = jsonify({'status': 'success'})
+    unset_jwt_cookies(response)
+    return response
 
 @auth_bp.route('/me', methods=['GET'])
 @jwt_required()

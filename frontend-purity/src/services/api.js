@@ -1,4 +1,5 @@
 import axios from 'axios';
+import authService from './auth.service';
 
 // Create axios instance with default config
 const api = axios.create({
@@ -6,17 +7,17 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // Important: needed for cookies to be sent with requests
+  withCredentials: true,
 });
 
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
-    // Get access token from localStorage
-    const accessToken = localStorage.getItem('access_token');
-    
-    // If access token exists, add it to headers
-    if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
+    // Add CSRF token header if it exists in cookies
+    const csrfToken = getCookie('csrf_access_token');
+    if (csrfToken) {
+      config.headers['X-CSRF-TOKEN'] = csrfToken;
     }
     
     return config;
@@ -31,33 +32,40 @@ api.interceptors.response.use(
   (response) => {
     return response.data;
   },
-  (error) => {
-    // Handle common errors here
-    if (error.response) {
-      switch (error.response.status) {
-        case 401:
-          // Handle unauthorized
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
+  async (error) => {
+    const originalRequest = error.config || {};
+    
+    if (
+      error.response?.status === 401 && 
+      !originalRequest._retry
+    ) {
+      originalRequest._retry = true;
+      
+      try {
+        const refreshSuccess = await authService.refreshToken();
+        if (refreshSuccess) {
+          return api(originalRequest);
+        } else {
           localStorage.removeItem('user');
           window.location.href = '/#/auth/signin';
-          break;
-        case 403:
-          // Handle forbidden
-          break;
-        case 404:
-          // Handle not found
-          break;
-        case 500:
-          // Handle server error
-          break;
-        default:
-          // Handle other errors
-          break;
+          return Promise.reject(error);
+        }
+      } catch (refreshError) {
+        localStorage.removeItem('user');
+        window.location.href = '/#/auth/signin';
+        return Promise.reject(refreshError);
       }
     }
     return Promise.reject(error);
   }
 );
+
+// Helper function to get cookie by name
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+  return null;
+}
 
 export default api; 

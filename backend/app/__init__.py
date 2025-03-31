@@ -28,6 +28,16 @@ def create_app(config_name='default'):
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 15 * 60  # 15 minutes in seconds
     app.config['JWT_REFRESH_TOKEN_EXPIRES'] = 7 * 24 * 60 * 60  # 7 days in seconds
     
+    # JWT Cookie Configuration
+    app.config['JWT_TOKEN_LOCATION'] = ['cookies']
+    app.config['JWT_COOKIE_SECURE'] = os.getenv('ENV') == 'production'  # Only send cookies over HTTPS in production
+    app.config['JWT_COOKIE_CSRF_PROTECT'] = True  # Enable CSRF protection
+    app.config['JWT_COOKIE_SAMESITE'] = 'Lax'  # Restrict cookie sending to same-site requests with some exceptions
+    app.config['JWT_COOKIE_DOMAIN'] = None  # Use this to specify a domain if needed
+    app.config['JWT_ACCESS_COOKIE_PATH'] = '/api/'  # Path for access token cookie
+    app.config['JWT_REFRESH_COOKIE_PATH'] = '/api/auth/refresh'  # Path for refresh token cookie
+    app.config['JWT_CSRF_IN_COOKIES'] = True  # Store CSRF tokens in cookies
+    
     # Initialize MongoDB
     mongo_client = MongoClient(os.getenv('MONGODB_URI'))
     app.mongo = mongo_client.dookan
@@ -35,9 +45,9 @@ def create_app(config_name='default'):
     # Initialize extensions
     CORS(app, 
          resources={r"/api/*": {
-             "origins": ["http://localhost:3000", "http://localhost:3001", "http://frontend:3000"],
+             "origins": ["http://localhost:3000"],
              "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-             "allow_headers": ["Content-Type", "Authorization", "Accept"],
+             "allow_headers": ["Content-Type", "Authorization", "Accept", "X-CSRF-TOKEN"],
              "supports_credentials": True,
              "expose_headers": ["Content-Type", "Authorization"],
              "max_age": 3600,

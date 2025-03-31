@@ -8,11 +8,20 @@ const authService = {
         email: credentials.email,
         password: credentials.password
       });
-      if (response.access_token) {
-        localStorage.setItem('access_token', response.access_token);
-        localStorage.setItem('refresh_token', response.refresh_token);
-        localStorage.setItem('user', JSON.stringify(response.user));
+      
+      // Store user data in localStorage with expiration (7 days)
+      if (response.user) {
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
+        
+        const userData = {
+          user: response.user,
+          expiresAt: expiresAt.getTime()
+        };
+        
+        localStorage.setItem('user', JSON.stringify(userData));
       }
+      
       return response;
     } catch (error) {
       throw error;
@@ -27,11 +36,20 @@ const authService = {
         password: userData.password,
         name: userData.name || ''
       });
-      if (response.access_token) {
-        localStorage.setItem('access_token', response.access_token);
-        localStorage.setItem('refresh_token', response.refresh_token);
-        localStorage.setItem('user', JSON.stringify(response.user));
+      
+      // Store user data in localStorage with expiration (7 days)
+      if (response.user) {
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
+        
+        const userData = {
+          user: response.user,
+          expiresAt: expiresAt.getTime()
+        };
+        
+        localStorage.setItem('user', JSON.stringify(userData));
       }
+      
       return response;
     } catch (error) {
       throw error;
@@ -39,22 +57,97 @@ const authService = {
   },
 
   // Logout user
-  logout: () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
-    window.location.href = '/#/auth/signin';
+  logout: async () => {
+    try {
+      await api.post('/auth/logout');
+      localStorage.removeItem('user');
+      window.location.href = '/#/auth/signin';
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still remove user from localStorage and redirect, even if API call fails
+      localStorage.removeItem('user');
+      window.location.href = '/#/auth/signin';
+    }
   },
 
-  // Get current user
-  getCurrentUser: () => {
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
+  // Get current user from localStorage, or fetch from API if not available
+  getCurrentUser: async () => {
+    const storedUserData = localStorage.getItem('user');
+    if (storedUserData) {
+      const userData = JSON.parse(storedUserData);
+      
+      // Check if data has expired
+      if (userData.expiresAt && userData.expiresAt > Date.now()) {
+        return userData.user;
+      } else {
+        // If expired, remove from localStorage
+        localStorage.removeItem('user');
+      }
+    }
+    
+    // If no valid user in localStorage, try to fetch from API
+    try {
+      const response = await api.get('/auth/me');
+      if (response.email) {
+        // Store with expiration
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
+        
+        const userData = {
+          user: response,
+          expiresAt: expiresAt.getTime()
+        };
+        
+        localStorage.setItem('user', JSON.stringify(userData));
+        return response;
+      }
+      return null;
+    } catch (error) {
+      return null;
+    }
   },
 
-  // Check if user is authenticated
+  // Synchronous method to check if user is authenticated based on localStorage
   isAuthenticated: () => {
-    return !!localStorage.getItem('access_token');
+    const storedUserData = localStorage.getItem('user');
+    if (!storedUserData) return false;
+    
+    try {
+      const userData = JSON.parse(storedUserData);
+      // Check if data has expired
+      if (userData.expiresAt && userData.expiresAt > Date.now()) {
+        return true;
+      } else {
+        // If expired, remove from localStorage
+        localStorage.removeItem('user');
+        return false;
+      }
+    } catch (error) {
+      return false;
+    }
+  },
+
+  // Refresh the access token using the refresh token cookie
+  refreshToken: async () => {
+    try {
+      const response = await api.post('/auth/refresh');
+      
+      // Update expiration date when token is refreshed
+      const storedUserData = localStorage.getItem('user');
+      if (storedUserData) {
+        const userData = JSON.parse(storedUserData);
+        
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
+        
+        userData.expiresAt = expiresAt.getTime();
+        localStorage.setItem('user', JSON.stringify(userData));
+      }
+      
+      return true;
+    } catch (error) {
+      return false;
+    }
   },
 
   // Commented out extra methods that don't exist in backend
