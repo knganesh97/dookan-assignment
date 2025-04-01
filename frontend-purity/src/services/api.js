@@ -1,9 +1,10 @@
 import axios from 'axios';
 import authService from './auth.service';
+import { getApiBaseUrl, getCookie } from '../utils/apiConfig';
 
 // Create axios instance with default config
 const api = axios.create({
-  baseURL: `${process.env.REACT_APP_API_URL}/api` || 'http://localhost:5001/api',
+  baseURL: getApiBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
@@ -59,13 +60,5 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
-// Helper function to get cookie by name
-function getCookie(name) {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(';').shift();
-  return null;
-}
 
 export default api; 

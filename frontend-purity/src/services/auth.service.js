@@ -1,4 +1,6 @@
 import api from './api';
+import axios from 'axios';
+import { getApiBaseUrl } from '../utils/apiConfig';
 
 const authService = {
   // Login user
@@ -130,7 +132,15 @@ const authService = {
   // Refresh the access token using the refresh token cookie
   refreshToken: async () => {
     try {
-      const response = await api.post('/auth/refresh');
+      // Use direct axios call instead of the intercepted api instance
+      const response = await axios({
+        method: 'post',
+        url: `${getApiBaseUrl()}/auth/refresh`,
+        withCredentials: true, // Important for cookies
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
       
       // Update expiration date when token is refreshed
       const storedUserData = localStorage.getItem('user');

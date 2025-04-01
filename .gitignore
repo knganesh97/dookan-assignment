@@ -61,4 +61,12 @@ htmlcov/
 .coverage.*
 .cache
 coverage.xml
-*.cover 
+*.cover
+
+# SSL
+*.pem
+*.key
+*.crt
+*.cer
+*.der
+*.priv 

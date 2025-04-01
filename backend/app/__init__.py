@@ -24,13 +24,18 @@ def create_app(config_name='default'):
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'jwt-secret-key')
     
+    # SSL Configuration
+    app.config['SSL_ENABLED'] = os.getenv('SSL_ENABLED', 'False').lower() == 'true'
+    app.config['SSL_CERT_PATH'] = os.getenv('SSL_CERT_PATH', './cert.pem')
+    app.config['SSL_KEY_PATH'] = os.getenv('SSL_KEY_PATH', './key.pem')
+    
     # JWT Configuration
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 15 * 60  # 15 minutes in seconds
     app.config['JWT_REFRESH_TOKEN_EXPIRES'] = 7 * 24 * 60 * 60  # 7 days in seconds
     
     # JWT Cookie Configuration
     app.config['JWT_TOKEN_LOCATION'] = ['cookies']
-    app.config['JWT_COOKIE_SECURE'] = os.getenv('ENV') == 'production'  # Only send cookies over HTTPS in production
+    app.config['JWT_COOKIE_SECURE'] = app.config['SSL_ENABLED'] or os.getenv('ENV') == 'production'
     app.config['JWT_COOKIE_CSRF_PROTECT'] = True  # Enable CSRF protection
     app.config['JWT_COOKIE_SAMESITE'] = 'Lax'  # Restrict cookie sending to same-site requests with some exceptions
     app.config['JWT_COOKIE_DOMAIN'] = None  # Use this to specify a domain if needed
