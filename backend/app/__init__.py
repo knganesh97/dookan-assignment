@@ -73,12 +73,10 @@ def create_app(config_name='default'):
     from .routes.auth import auth_bp
     from .routes.shopify import shopify_bp
     from .routes.events import events_bp
-    from .routes.analytics import analytics_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(shopify_bp, url_prefix='/api/products')
     app.register_blueprint(events_bp, url_prefix='/api/events')
-    app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
     
     # Create database tables
     with app.app_context():

@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..validations.product import ProductValidator
 from ..helpers.mongo_helpers import (
     create_mongo_product, 
@@ -8,7 +8,8 @@ from ..helpers.mongo_helpers import (
     get_mongo_products,
     get_mongo_product_by_id
 )
-from ..helpers.shopify_helpers import create_shopify_product, update_shopify_product, delete_shopify_product, get_shopify_client
+from ..helpers.shopify_helpers import create_shopify_product, update_shopify_product, delete_shopify_product
+from ..helpers.postgres_helpers import create_event
 from bson.objectid import ObjectId
 
 shopify_bp = Blueprint('shopify', __name__)
@@ -18,6 +19,18 @@ shopify_bp = Blueprint('shopify', __name__)
 def create_product():
     """Create a new product"""
     try:
+        # Get user information from JWT
+        current_user = get_jwt_identity()
+        
+        # Extract user_id and user_name (handle both old and new token formats)
+        if isinstance(current_user, dict):
+            user_id = current_user.get('id')
+            user_name = current_user.get('name')
+        else:
+            # For backwards compatibility
+            user_id = current_user
+            user_name = None
+        
         data = request.get_json()
         
         # Validate input data
@@ -43,6 +56,17 @@ def create_product():
             update_mongo_product(current_app.mongo, str(mongo_product._id), {'shopify_id': shopify_product['id']})
             mongo_product.shopify_id = shopify_product['id']
             
+            # Create event record using data from request and JWT
+            try:
+                create_event(
+                    user_id=user_id,
+                    user_name=user_name,
+                    product_id=str(mongo_product._id),
+                    product_title=mongo_product.title,
+                    event_type='create'
+                )
+            except Exception as event_error:
+                current_app.logger.error(f"Failed to create event: {str(event_error)}")
             return jsonify(mongo_product.to_dict()), 201
             
         except Exception as shopify_error:
@@ -114,6 +138,18 @@ def get_product(product_id):
 def update_product(product_id):
     """Update an existing product"""
     try:
+        # Get user information from JWT
+        current_user = get_jwt_identity()
+        
+        # Extract user_id and user_name (handle both old and new token formats)
+        if isinstance(current_user, dict):
+            user_id = current_user.get('id')
+            user_name = current_user.get('name')
+        else:
+            # For backwards compatibility
+            user_id = current_user
+            user_name = None
+            
         # Validate product ID
         validation_errors = ProductValidator.validate_product_id(product_id)
         if validation_errors:
@@ -169,6 +205,18 @@ def update_product(product_id):
                 update_mongo_product(current_app.mongo, product_id, old_product_data)
                 return jsonify({'error': f'Shopify update failed: {str(shopify_error)}'}), 500
         
+        # Create event record using data from request/MongoDB and JWT
+        try:
+            create_event(
+                user_id=user_id,
+                user_name=user_name,
+                product_id=mongo_product._id,
+                product_title=mongo_product.title,
+                event_type='update'
+            )
+        except Exception as event_error:
+            current_app.logger.error(f"Failed to create event: {str(event_error)}")
+        
         return jsonify(mongo_product.to_dict()), 200
             
     except Exception as e:
@@ -179,18 +227,27 @@ def update_product(product_id):
 def delete_product(product_id):
     """Delete a product"""
     try:
+        # Get user information from JWT
+        current_user = get_jwt_identity()
+        
+        # Extract user_id and user_name (handle both old and new token formats)
+        if isinstance(current_user, dict):
+            user_id = current_user.get('id')
+            user_name = current_user.get('name')
+        else:
+            # For backwards compatibility
+            user_id = current_user
+            user_name = None
+            
         # Validate product ID
         validation_errors = ProductValidator.validate_product_id(product_id)
         if validation_errors:
             return jsonify({'errors': validation_errors}), 400
         
         # Find product
-        product_data = current_app.mongo.products.find_one({
-            '_id': ObjectId(product_id),
-            'is_deleted': False
-        })
+        mongo_product = get_mongo_product_by_id(current_app.mongo, product_id)
         
-        if not product_data:
+        if not mongo_product:
             return jsonify({'error': 'Product not found'}), 404
         
         # Step 1: Soft delete in MongoDB
@@ -200,9 +257,9 @@ def delete_product(product_id):
             return jsonify({'error': f'MongoDB deletion failed: {str(mongo_error)}'}), 500
         
         # Step 2: Delete from Shopify if shopify_id exists
-        if product_data.get('shopify_id'):
+        if mongo_product.shopify_id:
             try:
-                deleted_id = delete_shopify_product(product_data['shopify_id'])
+                deleted_id = delete_shopify_product(mongo_product.shopify_id)
                 if not deleted_id:
                     # Rollback MongoDB soft delete
                     update_mongo_product(current_app.mongo, product_id, {'is_deleted': False})
@@ -212,6 +269,18 @@ def delete_product(product_id):
                 # Rollback MongoDB soft delete
                 update_mongo_product(current_app.mongo, product_id, {'is_deleted': False})
                 return jsonify({'error': f'Shopify deletion failed: {str(shopify_error)}'}), 500
+        
+        # Create event record using data from MongoDB and JWT
+        try:
+            create_event(
+                user_id=user_id,
+                user_name=user_name,
+                product_id=mongo_product._id,
+                product_title=mongo_product.title,
+                event_type='delete'
+            )
+        except Exception as event_error:
+            current_app.logger.error(f"Failed to create event: {str(event_error)}")
         
         return jsonify({'message': 'Product deleted successfully'}), 200
             
