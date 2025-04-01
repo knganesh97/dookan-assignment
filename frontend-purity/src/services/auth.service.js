@@ -136,13 +136,16 @@ const authService = {
   // Refresh the access token using the refresh token cookie
   refreshToken: async () => {
     try {
-      // Use direct axios call instead of the intercepted api instance
+      const csrfRefreshToken = getCookie('csrf_refresh_token');
+
+      // Use direct axios call to avoid circular dependency with api instance
       const response = await axios({
         method: 'post',
         url: `${getApiBaseUrl()}/auth/refresh`,
         withCredentials: true, // Important for cookies
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': csrfRefreshToken
         }
       });
       
