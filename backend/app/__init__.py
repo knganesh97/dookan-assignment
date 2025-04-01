@@ -19,10 +19,10 @@ def create_app(config_name='default'):
     app.config.from_object(config[config_name])
     
     # Configure app
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev')
+    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', config['default'].SECRET_KEY)
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('POSTGRES_URI')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'jwt-secret-key')
+    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', config['default'].JWT_SECRET_KEY)
     
     # SSL Configuration
     app.config['SSL_ENABLED'] = os.getenv('SSL_ENABLED', 'False').lower() == 'true'
@@ -50,7 +50,7 @@ def create_app(config_name='default'):
     # Initialize extensions
     CORS(app, 
          resources={r"/api/*": {
-             "origins": ["http://localhost:3000"],
+             "origins": [os.getenv('FRONTEND_URL')],
              "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
              "allow_headers": ["Content-Type", "Authorization", "Accept", "X-CSRF-TOKEN"],
              "supports_credentials": True,
