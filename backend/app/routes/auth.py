@@ -1,10 +1,10 @@
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import (
-    create_access_token, create_refresh_token, jwt_required, get_jwt_identity,
-    set_access_cookies, set_refresh_cookies, unset_jwt_cookies
+    jwt_required, set_access_cookies, set_refresh_cookies, unset_jwt_cookies
 )
 from datetime import datetime, timezone
 from ..models.user import User
+from ..helpers.jwt_helpers import get_user_identity_from_token, create_user_tokens
 from bson import ObjectId
 import logging
 
@@ -42,13 +42,8 @@ def register():
         result = current_app.mongo.users.insert_one(user.to_dict())
         user._id = result.inserted_id
         
-        # Generate tokens with user ID and name
-        user_identity = {
-            'id': str(user._id),
-            'name': user.name
-        }
-        access_token = create_access_token(identity=user_identity)
-        refresh_token = create_refresh_token(identity=user_identity)
+        # Generate tokens using utility function
+        access_token, refresh_token = create_user_tokens(str(user._id), user.name)
         
         logger.info(f"User registered successfully: {data['email']}")
         
@@ -100,13 +95,8 @@ def login():
             {'$set': {'last_login': user.last_login}}
         )
         
-        # Generate tokens with user ID and name
-        user_identity = {
-            'id': str(user._id),
-            'name': user.name
-        }
-        access_token = create_access_token(identity=user_identity)
-        refresh_token = create_refresh_token(identity=user_identity)
+        # Generate tokens using utility function
+        access_token, refresh_token = create_user_tokens(str(user._id), user.name)
         
         logger.info(f"User logged in successfully: {data['email']}")
         
@@ -130,9 +120,11 @@ def login():
 @auth_bp.route('/refresh', methods=['POST'])
 @jwt_required(refresh=True)
 def refresh():
-    current_user_identity = get_jwt_identity()
-    access_token = create_access_token(identity=current_user_identity)
-    refresh_token = create_refresh_token(identity=current_user_identity)
+    # Get current user identity using utility function
+    user_id, user_name = get_user_identity_from_token()
+    
+    # Create new tokens using utility function
+    access_token, refresh_token = create_user_tokens(user_id, user_name)
     
     response = jsonify({'status': 'success'})
     set_access_cookies(response, access_token)
@@ -149,9 +141,10 @@ def logout():
 @auth_bp.route('/me', methods=['GET'])
 @jwt_required()
 def get_current_user():
-    current_user_id = get_jwt_identity()
-    user_data = current_app.mongo.users.find_one({'_id': ObjectId(current_user_id)})
+    # Get user identity using utility function
+    user_id, _ = get_user_identity_from_token()
     
+    user_data = current_app.mongo.users.find_one({'_id': ObjectId(user_id)})
     if not user_data:
         return jsonify({'error': 'User not found'}), 404
     
@@ -161,9 +154,10 @@ def get_current_user():
 @auth_bp.route('/me', methods=['PUT'])
 @jwt_required()
 def update_current_user():
-    current_user_id = get_jwt_identity()
-    user_data = current_app.mongo.users.find_one({'_id': ObjectId(current_user_id)})
+    # Get user identity using utility function
+    user_id, _ = get_user_identity_from_token()
     
+    user_data = current_app.mongo.users.find_one({'_id': ObjectId(user_id)})
     if not user_data:
         return jsonify({'error': 'User not found'}), 404
     

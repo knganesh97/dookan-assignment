@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required
 from datetime import datetime, timezone
-from ..models.event import Event
 from ..helpers.postgres_helpers import get_user_events, get_events_by_timerange
 from .. import db
 

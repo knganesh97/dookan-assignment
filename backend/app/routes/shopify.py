@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required
 from ..validations.product import ProductValidator
 from ..helpers.mongo_helpers import (
     create_mongo_product, 
@@ -10,6 +10,7 @@ from ..helpers.mongo_helpers import (
 )
 from ..helpers.shopify_helpers import create_shopify_product, update_shopify_product, delete_shopify_product
 from ..helpers.postgres_helpers import create_event
+from ..helpers.jwt_helpers import get_user_identity_from_token
 from bson.objectid import ObjectId
 
 shopify_bp = Blueprint('shopify', __name__)
@@ -19,17 +20,8 @@ shopify_bp = Blueprint('shopify', __name__)
 def create_product():
     """Create a new product"""
     try:
-        # Get user information from JWT
-        current_user = get_jwt_identity()
-        
-        # Extract user_id and user_name (handle both old and new token formats)
-        if isinstance(current_user, dict):
-            user_id = current_user.get('id')
-            user_name = current_user.get('name')
-        else:
-            # For backwards compatibility
-            user_id = current_user
-            user_name = None
+        # Get user information using utility function
+        user_id, user_name = get_user_identity_from_token()
         
         data = request.get_json()
         
@@ -138,17 +130,8 @@ def get_product(product_id):
 def update_product(product_id):
     """Update an existing product"""
     try:
-        # Get user information from JWT
-        current_user = get_jwt_identity()
-        
-        # Extract user_id and user_name (handle both old and new token formats)
-        if isinstance(current_user, dict):
-            user_id = current_user.get('id')
-            user_name = current_user.get('name')
-        else:
-            # For backwards compatibility
-            user_id = current_user
-            user_name = None
+        # Get user information using utility function
+        user_id, user_name = get_user_identity_from_token()
             
         # Validate product ID
         validation_errors = ProductValidator.validate_product_id(product_id)
@@ -227,17 +210,8 @@ def update_product(product_id):
 def delete_product(product_id):
     """Delete a product"""
     try:
-        # Get user information from JWT
-        current_user = get_jwt_identity()
-        
-        # Extract user_id and user_name (handle both old and new token formats)
-        if isinstance(current_user, dict):
-            user_id = current_user.get('id')
-            user_name = current_user.get('name')
-        else:
-            # For backwards compatibility
-            user_id = current_user
-            user_name = None
+        # Get user information using utility function
+        user_id, user_name = get_user_identity_from_token()
             
         # Validate product ID
         validation_errors = ProductValidator.validate_product_id(product_id)
