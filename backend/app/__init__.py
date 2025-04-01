@@ -42,7 +42,7 @@ def create_app(config_name='default'):
     app.config['JWT_COOKIE_SAMESITE'] = 'Lax'  # Restrict cookie sending to same-site requests with some exceptions
     app.config['JWT_COOKIE_DOMAIN'] = None  # Use this to specify a domain if needed
     app.config['JWT_ACCESS_COOKIE_PATH'] = '/api/'  # Path for access token cookie
-    app.config['JWT_REFRESH_COOKIE_PATH'] = '/api/auth/refresh'  # Path for refresh token cookie
+    app.config['JWT_REFRESH_COOKIE_PATH'] = '/api/auth'  # Path for refresh token cookie
     app.config['JWT_CSRF_IN_COOKIES'] = True  # Store CSRF tokens in cookies
     
     # Initialize MongoDB
