@@ -83,7 +83,11 @@ class Product:
     
     @property
     def id(self):
-        return str(self._id) if hasattr(self, '_id') else None
+        if hasattr(self, '_id'):
+            if isinstance(self._id, ObjectId):
+                return str(self._id)
+            return str(self._id)
+        return None
     
     def update(self, data):
         self.title = data.get('title', self.title)

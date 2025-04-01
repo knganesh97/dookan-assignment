@@ -25,7 +25,13 @@ class User:
         user.name = data.get('name')
         user.created_at = data.get('created_at', datetime.now(timezone.utc))
         user.last_login = data.get('last_login')
-        user._id = data.get('_id')
+        
+        _id = data.get('_id')
+        if _id and isinstance(_id, str):
+            user._id = ObjectId(_id)
+        else:
+            user._id = _id
+            
         return user
     
     def to_dict(self):
