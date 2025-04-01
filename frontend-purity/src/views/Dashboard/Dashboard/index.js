@@ -33,7 +33,7 @@ export default function Dashboard() {
 
   return (
     <Flex flexDirection='column' pt={{ base: "120px", md: "75px" }}>
-      <SimpleGrid columns={{ sm: 1, md: 2, xl: 4 }} spacing='24px'>
+      {/* <SimpleGrid columns={{ sm: 1, md: 2, xl: 4 }} spacing='24px'>
         <MiniStatistics
           title={"Today's Moneys"}
           amount={"$53,000"}
@@ -117,7 +117,7 @@ export default function Dashboard() {
           amount={30}
           data={timelineData}
         />
-      </Grid>
+      </Grid> */}
     </Flex>
   );
 }

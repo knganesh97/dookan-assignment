@@ -1,6 +1,7 @@
 // import
 import Dashboard from "views/Dashboard/Dashboard";
 import Tables from "views/Dashboard/Tables";
+import EventLogs from "views/Dashboard/EventLogs";
 import Billing from "views/Dashboard/Billing";
 import RTLPage from "views/Dashboard/RTL";
 import Profile from "views/Dashboard/Profile";
@@ -35,21 +36,29 @@ var dashRoutes = [
     layout: "/admin",
   },
   {
-    path: "/billing",
-    name: "Billing",
+    path: "/events",
+    name: "Events",
     rtlName: "لوحة القيادة",
-    icon: <CreditIcon color="inherit" />,
-    component: Billing,
+    icon: <StatsIcon color="inherit" />,
+    component: EventLogs,
     layout: "/admin",
   },
-  {
-    path: "/rtl-support-page",
-    name: "RTL",
-    rtlName: "آرتيإل",
-    icon: <SupportIcon color="inherit" />,
-    component: RTLPage,
-    layout: "/rtl",
-  },
+  // {
+  //   path: "/billing",
+  //   name: "Billing",
+  //   rtlName: "لوحة القيادة",
+  //   icon: <CreditIcon color="inherit" />,
+  //   component: Billing,
+  //   layout: "/admin",
+  // },
+  // {
+  //   path: "/rtl-support-page",
+  //   name: "RTL",
+  //   rtlName: "آرتيإل",
+  //   icon: <SupportIcon color="inherit" />,
+  //   component: RTLPage,
+  //   layout: "/rtl",
+  // },
   {
     name: "ACCOUNT PAGES",
     category: "account",

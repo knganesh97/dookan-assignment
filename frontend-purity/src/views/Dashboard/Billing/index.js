@@ -22,7 +22,7 @@ import Transactions from "./components/Transactions";
 function Billing() {
   return (
     <Flex direction='column' pt={{ base: "120px", md: "75px" }}>
-      <Grid templateColumns={{ sm: "1fr", lg: "2fr 1.2fr" }} templateRows='1fr'>
+      {/* <Grid templateColumns={{ sm: "1fr", lg: "2fr 1.2fr" }} templateRows='1fr'>
         <Box>
           <Grid
             templateColumns={{
@@ -88,7 +88,7 @@ function Billing() {
           newestTransactions={newestTransactions}
           olderTransactions={olderTransactions}
         />
-      </Grid>
+      </Grid> */}
     </Flex>
   );
 }

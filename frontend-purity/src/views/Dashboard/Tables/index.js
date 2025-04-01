@@ -89,7 +89,7 @@ function Tables() {
         onProductCreated={handleProductUpdated}
         onProductUpdated={handleProductUpdated}
       />
-      <Authors
+      {/* <Authors
         title={"Authors Table"}
         captions={["Author", "Function", "Status", "Employed", ""]}
         data={tablesTableData}
@@ -98,7 +98,7 @@ function Tables() {
         title={"Projects Table"}
         captions={["Companies", "Budget", "Status", "Completion", ""]}
         data={dashboardTableData}
-      />
+      /> */}
     </Flex>
   );
 }

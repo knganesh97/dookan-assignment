@@ -1,6 +1,6 @@
 import api from './api';
 import axios from 'axios';
-import { getApiBaseUrl } from '../utils/apiConfig';
+import { getApiBaseUrl, getCookie } from '../utils/apiConfig';
 
 const authService = {
   // Login user
