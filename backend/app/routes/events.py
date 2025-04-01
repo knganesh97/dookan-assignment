@@ -6,7 +6,7 @@ from .. import db
 
 events_bp = Blueprint('events', __name__)
 
-@events_bp.route('/', methods=['POST'])
+@events_bp.route('', methods=['POST'])
 @jwt_required()
 def create_event():
     user_id = get_jwt_identity()
@@ -26,7 +26,7 @@ def create_event():
     
     return jsonify({'message': 'Event logged successfully'}), 201
 
-@events_bp.route('/', methods=['GET'])
+@events_bp.route('', methods=['GET'])
 @jwt_required()
 def get_events():
     user_id = get_jwt_identity()

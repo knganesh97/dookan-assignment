@@ -1,8 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required
-from gql import gql
-from ..models.product import Product
-from ..validations.product import ProductValidator, ValidationError
+from ..validations.product import ProductValidator
 from ..helpers.mongo_helpers import (
     create_mongo_product, 
     update_mongo_product, 
@@ -15,7 +13,7 @@ from bson.objectid import ObjectId
 
 shopify_bp = Blueprint('shopify', __name__)
 
-@shopify_bp.route('/products', methods=['POST'])
+@shopify_bp.route('', methods=['POST'])
 @jwt_required()
 def create_product():
     """Create a new product"""
@@ -55,7 +53,7 @@ def create_product():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@shopify_bp.route('/products', methods=['GET', 'OPTIONS'])
+@shopify_bp.route('', methods=['GET', 'OPTIONS'])
 @jwt_required()
 def get_products():
     if request.method == 'OPTIONS':
@@ -94,7 +92,7 @@ def get_products():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@shopify_bp.route('/products/<product_id>', methods=['GET'])
+@shopify_bp.route('/<product_id>', methods=['GET'])
 @jwt_required()
 def get_product(product_id):
     """Retrieve product details by ID"""
@@ -111,7 +109,7 @@ def get_product(product_id):
             return jsonify({'error': str(e)}), 404
         return jsonify({'error': str(e)}), 500
 
-@shopify_bp.route('/products/<product_id>', methods=['PUT'])
+@shopify_bp.route('/<product_id>', methods=['PUT'])
 @jwt_required()
 def update_product(product_id):
     """Update an existing product"""
@@ -176,7 +174,7 @@ def update_product(product_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@shopify_bp.route('/products/<product_id>', methods=['DELETE'])
+@shopify_bp.route('/<product_id>', methods=['DELETE'])
 @jwt_required()
 def delete_product(product_id):
     """Delete a product"""
@@ -197,7 +195,7 @@ def delete_product(product_id):
         
         # Step 1: Soft delete in MongoDB
         try:
-            mongo_product = delete_mongo_product(current_app.mongo, product_id)
+            delete_mongo_product(current_app.mongo, product_id)
         except Exception as mongo_error:
             return jsonify({'error': f'MongoDB deletion failed: {str(mongo_error)}'}), 500
         
@@ -219,73 +217,3 @@ def delete_product(product_id):
             
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-@shopify_bp.route('/orders', methods=['GET'])
-@jwt_required()
-def get_orders():
-    client = get_shopify_client()
-    
-    query = gql("""
-        query {
-            orders(first: 10) {
-                edges {
-                    node {
-                        id
-                        name
-                        totalPriceSet {
-                            shopMoney {
-                                amount
-                            }
-                        }
-                        createdAt
-                        customer {
-                            firstName
-                            lastName
-                            email
-                        }
-                    }
-                }
-            }
-        }
-    """)
-    
-    try:
-        result = client.execute(query)
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@shopify_bp.route('/analytics', methods=['GET'])
-@jwt_required()
-def get_analytics():
-    client = get_shopify_client()
-    
-    query = gql("""
-        query {
-            shop {
-                name
-                myshopifyDomain
-                plan {
-                    displayName
-                }
-            }
-            orders(first: 100) {
-                edges {
-                    node {
-                        totalPriceSet {
-                            shopMoney {
-                                amount
-                            }
-                        }
-                        createdAt
-                    }
-                }
-            }
-        }
-    """)
-    
-    try:
-        result = client.execute(query)
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500 
