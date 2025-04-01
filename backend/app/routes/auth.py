@@ -123,9 +123,11 @@ def login():
 def refresh():
     current_user_id = get_jwt_identity()
     access_token = create_access_token(identity=current_user_id)
+    refresh_token = create_refresh_token(identity=current_user_id)
     
     response = jsonify({'status': 'success'})
     set_access_cookies(response, access_token)
+    set_refresh_cookies(response, refresh_token)
     
     return response
 
