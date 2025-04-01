@@ -1,14 +1,25 @@
 import api from './api';
 import axios from 'axios';
 import { getApiBaseUrl } from '../utils/apiConfig';
+import bcrypt from 'bcryptjs';
+
+// Utility function to hash password client-side
+const hashPassword = async (password) => {
+  // Use a fast client-side implementation with fewer rounds for performance
+  const salt = await bcrypt.genSalt(5); // Less rounds than server-side for better UX
+  return bcrypt.hash(password, salt);
+};
 
 const authService = {
   // Login user
   login: async (credentials) => {
     try {
+      // Hash password client-side before sending
+      const hashedPassword = await hashPassword(credentials.password);
+      
       const response = await api.post('/auth/login', {
         email: credentials.email,
-        password: credentials.password
+        password: hashedPassword
       });
       
       // Store user data in localStorage with expiration (7 days)
@@ -33,9 +44,12 @@ const authService = {
   // Register new user
   register: async (userData) => {
     try {
+      // Hash password client-side before sending
+      const hashedPassword = await hashPassword(userData.password);
+      
       const response = await api.post('/auth/register', {
         email: userData.email,
-        password: userData.password,
+        password: hashedPassword,
         name: userData.name || ''
       });
       

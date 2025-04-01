@@ -2,6 +2,7 @@ from flask import Flask
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_sqlalchemy import SQLAlchemy
+from flask_bcrypt import Bcrypt
 from pymongo import MongoClient
 import os
 from dotenv import load_dotenv
@@ -13,6 +14,7 @@ load_dotenv()
 # Initialize Flask extensions
 db = SQLAlchemy()
 jwt = JWTManager()
+bcrypt = Bcrypt()
 
 def create_app(config_name='default'):
     app = Flask(__name__)
@@ -61,6 +63,7 @@ def create_app(config_name='default'):
     
     db.init_app(app)
     jwt.init_app(app)
+    bcrypt.init_app(app)
     
     # Create unique index on email field
     with app.app_context():

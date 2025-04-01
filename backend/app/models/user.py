@@ -1,11 +1,11 @@
 from datetime import datetime, timezone
-from werkzeug.security import generate_password_hash, check_password_hash
+from .. import bcrypt
 from bson import ObjectId
 
 class User:
     def __init__(self, email, password=None, name=None):
         self.email = email
-        self.password_hash = generate_password_hash(password) if password else None
+        self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8') if password else None
         self.name = name
         self.created_at = datetime.now(timezone.utc)
         self.last_login = None
@@ -13,7 +13,7 @@ class User:
     def set_password(self, password):
         if not password:
             raise ValueError("Password is required")
-        self.password_hash = generate_password_hash(password)
+        self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
     
     @staticmethod
     def from_dict(data):
@@ -50,7 +50,7 @@ class User:
     def check_password(self, password):
         if not self.password_hash:
             return False
-        return check_password_hash(self.password_hash, password)
+        return bcrypt.check_password_hash(self.password_hash, password)
     
     @property
     def id(self):
