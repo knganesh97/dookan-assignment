@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from bson.objectid import ObjectId
 from ..models.product import Product
+from ..models.user import User
 
 def create_mongo_product(mongo, product_data):
     """Create a product in MongoDB"""
@@ -115,4 +116,93 @@ def get_mongo_product_by_id(mongo, product_id):
             
         return Product.from_dict(product_data)
     except Exception as e:
-        raise Exception(f"MongoDB fetch failed: {str(e)}") 
+        raise Exception(f"MongoDB fetch failed: {str(e)}")
+
+def get_mongo_users(mongo):
+    """Get all users from MongoDB"""
+    try:
+        users = mongo.users.find()
+        return [User.from_dict(user) for user in users]
+    except Exception as e:
+        raise Exception(f"MongoDB fetch failed: {str(e)}")
+
+def create_mongo_user(mongo, user_data):
+    """Create a user in MongoDB"""
+    try:
+        user = User(
+            email=user_data['email'],
+            password=user_data['password'],
+            name=user_data.get('name', '')
+        )
+        result = mongo.users.insert_one(user.to_dict())
+        user._id = result.inserted_id
+        return user
+    except Exception as e:
+        raise Exception(f"MongoDB user creation failed: {str(e)}")
+
+def get_mongo_user_by_email(mongo, email):
+    """Get a user by email from MongoDB"""
+    try:
+        user_data = mongo.users.find_one({'email': email})
+        if not user_data:
+            return None
+        return User.from_dict(user_data)
+    except Exception as e:
+        raise Exception(f"MongoDB user fetch failed: {str(e)}")
+
+def get_mongo_user_by_id(mongo, user_id):
+    """Get a user by ID from MongoDB"""
+    try:
+        user_data = mongo.users.find_one({'_id': ObjectId(user_id)})
+        if not user_data:
+            return None
+        return User.from_dict(user_data)
+    except Exception as e:
+        raise Exception(f"MongoDB user fetch failed: {str(e)}")
+
+def update_mongo_user_login_time(mongo, user_id):
+    """Update a user's last login time in MongoDB"""
+    try:
+        last_login = datetime.now(timezone.utc)
+        result = mongo.users.update_one(
+            {'_id': ObjectId(user_id)},
+            {'$set': {'last_login': last_login}}
+        )
+        if result.modified_count == 0:
+            raise Exception("No user was updated")
+        return last_login
+    except Exception as e:
+        raise Exception(f"MongoDB user login update failed: {str(e)}")
+
+def update_mongo_user(mongo, user_id, update_fields):
+    """Update user fields in MongoDB"""
+    try:
+        result = mongo.users.update_one(
+            {'_id': ObjectId(user_id)},
+            {'$set': update_fields}
+        )
+        if result.modified_count == 0:
+            raise Exception("No user was updated")
+            
+        updated_user = mongo.users.find_one({'_id': ObjectId(user_id)})
+        return User.from_dict(updated_user)
+    except Exception as e:
+        raise Exception(f"MongoDB user update failed: {str(e)}")
+
+def get_mongo_users_name_and_id(mongo):
+    """Get only names and IDs of all users from MongoDB"""
+    try:
+        # Use projection to only retrieve _id and name fields
+        users = mongo.users.find({}, {'_id': 1, 'name': 1})
+        
+        # Format results as a list of dictionaries with id and name
+        result = []
+        for user in users:
+            result.append({
+                'id': str(user['_id']),
+                'name': user.get('name', '')
+            })
+        
+        return result
+    except Exception as e:
+        raise Exception(f"MongoDB user name/id fetch failed: {str(e)}")

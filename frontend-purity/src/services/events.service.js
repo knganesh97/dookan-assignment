@@ -14,7 +14,16 @@ const eventsService = {
     try {
       const queryString = new URLSearchParams(queryParams).toString();
       const response = await api.get(`/events?${queryString}`);
-      return response;  // Don't try to access .data again since it's already handled by interceptor
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  getUsersList: async () => {
+    try {
+      const response = await api.get('/events/users');
+      return response;
     } catch (error) {
       throw error;
     }

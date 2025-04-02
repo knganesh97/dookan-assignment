@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required
 from datetime import datetime, timezone, timedelta
 from ..helpers.postgres_helpers import get_user_events, get_events_by_timerange
+from ..helpers.mongo_helpers import get_mongo_users_name_and_id
 from .. import db
 
 events_bp = Blueprint('events', __name__)
@@ -73,4 +74,15 @@ def get_events():
     except Exception as e:
         current_app.logger.error(f"Error fetching events: {str(e)}")
         return jsonify({'error': 'Failed to fetch events'}), 500
+
+@events_bp.route('/users', methods=['GET'])
+@jwt_required()
+def get_users_list():
+    """Get a list of all users with only their names and IDs"""
+    try:
+        users = get_mongo_users_name_and_id(current_app.mongo)
+        return jsonify(users)
+    except Exception as e:
+        current_app.logger.error(f"Failed to retrieve users list: {str(e)}")
+        return jsonify({'error': 'Failed to retrieve users list'}), 500
     

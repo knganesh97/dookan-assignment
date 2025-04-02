@@ -2,10 +2,11 @@ from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import (
     jwt_required, set_access_cookies, set_refresh_cookies, unset_jwt_cookies
 )
-from datetime import datetime, timezone
-from ..models.user import User
 from ..helpers.jwt_helpers import get_user_identity_from_token, create_user_tokens
-from bson import ObjectId
+from ..helpers.mongo_helpers import (
+    create_mongo_user, get_mongo_user_by_email, get_mongo_user_by_id,
+    update_mongo_user_login_time, update_mongo_user
+)
 import logging
 
 auth_bp = Blueprint('auth', __name__)
@@ -27,20 +28,13 @@ def register():
         return jsonify({'error': 'Password must be at least 8 characters long'}), 400
     
     # Check if user exists in MongoDB
-    if current_app.mongo.users.find_one({'email': data['email']}):
+    if get_mongo_user_by_email(current_app.mongo, data['email']):
         logger.warning(f"Registration failed - email already exists: {data['email']}")
         return jsonify({'error': 'Email already registered'}), 400
     
     try:
-        user = User(
-            email=data['email'],
-            password=data['password'],
-            name=data.get('name', '')
-        )
-        
-        # Insert into MongoDB
-        result = current_app.mongo.users.insert_one(user.to_dict())
-        user._id = result.inserted_id
+        # Create user using helper function
+        user = create_mongo_user(current_app.mongo, data)
         
         # Generate tokens using utility function
         access_token, refresh_token = create_user_tokens(str(user._id), user.name)
@@ -75,30 +69,24 @@ def login():
         logger.warning("Login failed - missing email or password")
         return jsonify({'error': 'Email and password are required'}), 400
     
-    user_data = current_app.mongo.users.find_one({'email': data['email']})
+    user = get_mongo_user_by_email(current_app.mongo, data['email'])
     
-    if not user_data:
+    if not user:
         logger.warning(f"Login failed - user not found: {data['email']}")
         return jsonify({'error': 'Invalid credentials'}), 401
     
     try:
-        user = User.from_dict(user_data)
-        
         if not user.check_password(data['password']):
             logger.warning(f"Login failed - invalid password for: {data['email']}")
             return jsonify({'error': 'Invalid credentials'}), 401
         
         # Update last login
-        user.last_login = datetime.now(timezone.utc)
-        current_app.mongo.users.update_one(
-            {'_id': user._id},
-            {'$set': {'last_login': user.last_login}}
-        )
+        login_time = update_mongo_user_login_time(current_app.mongo, user._id)
         
         # Generate tokens using utility function
         access_token, refresh_token = create_user_tokens(str(user._id), user.name)
         
-        logger.info(f"User logged in successfully: {data['email']}")
+        logger.info(f"User logged in successfully: {data['email']} at {login_time}")
         
         # Create response
         response = jsonify({
@@ -144,11 +132,10 @@ def get_current_user():
     # Get user identity using utility function
     user_id, _ = get_user_identity_from_token()
     
-    user_data = current_app.mongo.users.find_one({'_id': ObjectId(user_id)})
-    if not user_data:
+    user = get_mongo_user_by_id(current_app.mongo, user_id)
+    if not user:
         return jsonify({'error': 'User not found'}), 404
     
-    user = User.from_dict(user_data)
     return jsonify(user.to_safe_dict())
 
 @auth_bp.route('/me', methods=['PUT'])
@@ -157,11 +144,10 @@ def update_current_user():
     # Get user identity using utility function
     user_id, _ = get_user_identity_from_token()
     
-    user_data = current_app.mongo.users.find_one({'_id': ObjectId(user_id)})
-    if not user_data:
+    user = get_mongo_user_by_id(current_app.mongo, user_id)
+    if not user:
         return jsonify({'error': 'User not found'}), 404
     
-    user = User.from_dict(user_data)
     data = request.get_json()
     
     update_fields = {}
@@ -172,11 +158,7 @@ def update_current_user():
         update_fields['password_hash'] = user.password_hash
     
     if update_fields:
-        current_app.mongo.users.update_one(
-            {'_id': user._id},
-            {'$set': update_fields}
-        )
+        updated_user = update_mongo_user(current_app.mongo, user_id, update_fields)
+        return jsonify(updated_user.to_safe_dict())
     
-    # Get updated user data
-    updated_user = User.from_dict(current_app.mongo.users.find_one({'_id': user._id}))
-    return jsonify(updated_user.to_safe_dict()) 
+    return jsonify(user.to_safe_dict()) 

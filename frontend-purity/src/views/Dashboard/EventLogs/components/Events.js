@@ -13,7 +13,13 @@ const Events = ({
     events,
     loading,
     totalCount,
-    title
+    title,
+    eventType,
+    startDate,
+    endDate,
+    userId,
+    onFilterChange,
+    usersList
 }) => {
     const captions = ["ID", "User Name", "User ID", "Product Title", "Product ID", "Event Type", "Timestamp"];
     const hasMorePages = totalCount > perPage;
@@ -32,6 +38,12 @@ const Events = ({
                         setPageNumber={setPageNumber}
                         setPerPage={setPerPage}
                         hasMorePages={hasMorePages}
+                        eventType={eventType}
+                        startDate={startDate}
+                        endDate={endDate}
+                        userId={userId}
+                        onFilterChange={onFilterChange}
+                        usersList={usersList}
                     />
                 </Flex>
             </CardHeader>
