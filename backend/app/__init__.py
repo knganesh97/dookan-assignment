@@ -5,6 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from pymongo import MongoClient
 import os
+import logging
 from dotenv import load_dotenv
 from .config import config
 
@@ -19,6 +20,10 @@ bcrypt = Bcrypt()
 def create_app(config_name='default'):
     app = Flask(__name__)
     app.config.from_object(config[config_name])
+    
+    # Configure logging
+    logging.basicConfig(level=logging.INFO)
+    app.logger.setLevel(logging.INFO)
     
     # Configure app
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', config['default'].SECRET_KEY)
@@ -43,7 +48,7 @@ def create_app(config_name='default'):
     app.config['JWT_COOKIE_DOMAIN'] = None  # Use this to specify a domain if needed
     app.config['JWT_ACCESS_COOKIE_PATH'] = '/api/'  # Path for access token cookie
     app.config['JWT_REFRESH_COOKIE_PATH'] = '/api/auth'  # Path for refresh token cookie
-    app.config['JWT_CSRF_IN_COOKIES'] = True  # Store CSRF tokens in cookies
+    app.config['JWT_CSRF_IN_COOKIES'] = True
     
     # Initialize MongoDB
     mongo_client = MongoClient(os.getenv('MONGODB_URI'))

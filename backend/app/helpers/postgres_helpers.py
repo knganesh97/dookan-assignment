@@ -110,6 +110,9 @@ def get_events_by_timerange(start_date=None, end_date=None, event_type=None, pag
         dict: Dictionary with events and pagination info
     """
     try:
+        # Log input parameters for monitoring
+        current_app.logger.info(f"Fetching events with filters: start_date={start_date}, end_date={end_date}, event_type={event_type}")
+        
         # Choose the optimal query path based on filters
         if event_type:
             # Use the combined event_type + timestamp index
@@ -131,6 +134,9 @@ def get_events_by_timerange(start_date=None, end_date=None, event_type=None, pag
         
         # Apply pagination
         pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+        
+        # Log the result count for monitoring
+        current_app.logger.info(f"Found {pagination.total} events matching the criteria")
         
         return {
             'events': [event.to_dict() for event in pagination.items],

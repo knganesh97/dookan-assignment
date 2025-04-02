@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from ..helpers.postgres_helpers import get_user_events, get_events_by_timerange
 from .. import db
 
@@ -25,6 +25,9 @@ def get_events():
                 start_date = start_date.replace(tzinfo=timezone.utc)
         except ValueError:
             return jsonify({'error': 'Invalid start_date format. Use ISO format (YYYY-MM-DDTHH:MM:SS)'}), 400
+    else:
+        # Default to 30 days ago
+        start_date = datetime.now(timezone.utc) - timedelta(days=30)
     
     end_date = None
     if 'end_date' in request.args:
@@ -35,7 +38,13 @@ def get_events():
                 end_date = end_date.replace(tzinfo=timezone.utc)
         except ValueError:
             return jsonify({'error': 'Invalid end_date format. Use ISO format (YYYY-MM-DDTHH:MM:SS)'}), 400
-    
+    else:
+        # Default to current time since we don't have future events
+        end_date = datetime.now(timezone.utc)
+
+    # Log the query parameters
+    current_app.logger.info(f"Query parameters: start_date={start_date}, end_date={end_date}, user_id={user_id}, event_type={event_type}")
+
     # Choose the appropriate query method based on parameters
     try:
         if user_id:
@@ -58,6 +67,8 @@ def get_events():
                 per_page=per_page
             )
         
+        # Log the result
+        current_app.logger.info(f"Query result: {result}")
         return jsonify(result)
     except Exception as e:
         current_app.logger.error(f"Error fetching events: {str(e)}")

@@ -1,6 +1,7 @@
 import os
 from gql import gql, Client
 from gql.transport.requests import RequestsHTTPTransport
+from flask import current_app
 
 def get_shopify_client():
     store_url = os.getenv('SHOPIFY_STORE_URL')
@@ -97,11 +98,11 @@ def create_shopify_product(product_data):
             image_result = client.execute(image_mutation, variable_values=image_variables)
             if image_result['productCreateMedia']['mediaUserErrors']:
                 # Log the error but don't fail the whole operation
-                print(f"Failed to add image: {image_result['productCreateMedia']['mediaUserErrors']}")
+                current_app.logger.error(f"Failed to add image: {image_result['productCreateMedia']['mediaUserErrors']}")
                 
         except Exception as e:
             # Log the error but don't fail the whole operation
-            print(f"Error adding image: {str(e)}")
+            current_app.logger.error(f"Error adding image: {str(e)}")
     
     return product
 
@@ -165,13 +166,13 @@ def update_shopify_product(shopify_id, product_data):
     }
     
     # Log the input for debugging
-    print(f"Sending to Shopify: {variables}")
+    current_app.logger.info(f"Sending to Shopify: {variables}")
     
     result = client.execute(mutation, variable_values=variables)
     
     # Log any errors for debugging
     if result['productUpdate']['userErrors']:
-        print(f"Shopify update errors: {result['productUpdate']['userErrors']}")
+        current_app.logger.error(f"Shopify update errors: {result['productUpdate']['userErrors']}")
         return None
     
     product = result['productUpdate']['product']
@@ -201,11 +202,11 @@ def update_shopify_product(shopify_id, product_data):
             delete_result = client.execute(delete_images_mutation, variable_values=delete_variables)
             
             if delete_result['productDeleteImages']['userErrors']:
-                print(f"Error deleting images: {delete_result['productDeleteImages']['userErrors']}")
+                current_app.logger.error(f"Error deleting images: {delete_result['productDeleteImages']['userErrors']}")
             
             # If there's a new image, add it
             if product_data['image_url'] and product_data['image_url'].strip():
-                print(f"Adding new image: {product_data['image_url']}")
+                current_app.logger.info(f"Adding new image: {product_data['image_url']}")
                 
                 # Add new image using the media API
                 image_mutation = gql("""
@@ -237,10 +238,10 @@ def update_shopify_product(shopify_id, product_data):
                 image_result = client.execute(image_mutation, variable_values=image_variables)
                 
                 if image_result['productCreateMedia']['mediaUserErrors']:
-                    print(f"Error adding image: {image_result['productCreateMedia']['mediaUserErrors']}")
+                    current_app.logger.error(f"Error adding image: {image_result['productCreateMedia']['mediaUserErrors']}")
                 
         except Exception as e:
-            print(f"Error handling images: {str(e)}")
+            current_app.logger.error(f"Error handling images: {str(e)}")
             # Don't fail the whole update if image handling fails
             
     return product
