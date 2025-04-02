@@ -27,7 +27,7 @@ const Products = ({
     title, captions = [], data = [], loading = false, error = null, 
     setPageNumber, setPerPage, setSortBy, setSortOrder,
     pageNumber, perPage, sortBy, sortOrder, onSearch, searchQuery,
-    onProductCreated, onProductUpdated,
+    onProductCreated, onProductUpdated, totalCount
 }) => {
   const textColor = useColorModeValue("gray.700", "white");
   const toast = useToast();
@@ -147,8 +147,7 @@ const Products = ({
     }
   };
 
-  // Check if there might be more pages
-  const hasMorePages = data && Array.isArray(data) && data.length >= perPage;
+  const hasMorePages = totalCount > perPage;
 
   return (
     <Card my='22px' overflowX={{ sm: "scroll", xl: "hidden" }}>

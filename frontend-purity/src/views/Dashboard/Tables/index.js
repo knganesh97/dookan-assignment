@@ -16,7 +16,7 @@ function Tables() {
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState('desc');
   const [searchQuery, setSearchQuery] = useState('');
-
+  const [totalCount, setTotalCount] = useState(0);
   const fetchProducts = async (params = {}) => {
     try {
       setLoading(true);
@@ -27,9 +27,11 @@ function Tables() {
       
       if (response?.products && Array.isArray(response.products)) {
         setProducts(response.products);
+        setTotalCount(response.total);
       } else {
         console.warn("Received invalid products data:", response);
         setProducts([]);
+        setTotalCount(0);
       }
     } catch (err) {
       console.error("Error fetching products:", err);
@@ -88,6 +90,7 @@ function Tables() {
         searchQuery={searchQuery}
         onProductCreated={handleProductUpdated}
         onProductUpdated={handleProductUpdated}
+        totalCount={totalCount}
       />
       {/* <Authors
         title={"Authors Table"}

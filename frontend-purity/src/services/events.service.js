@@ -14,7 +14,7 @@ const eventsService = {
     try {
       const queryString = new URLSearchParams(queryParams).toString();
       const response = await api.get(`/events?${queryString}`);
-      return response.data;
+      return response;  // Don't try to access .data again since it's already handled by interceptor
     } catch (error) {
       throw error;
     }
