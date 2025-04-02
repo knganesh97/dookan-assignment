@@ -10,7 +10,6 @@ import {
   Image,
   Button,
   Box,
-  useColorModeValue,
 } from "@chakra-ui/react";
 import { FaEdit, FaTrash, FaSort, FaSortUp, FaSortDown } from "react-icons/fa";
 

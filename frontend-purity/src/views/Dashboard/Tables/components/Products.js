@@ -15,15 +15,13 @@ import {
 import Card from "components/Card/Card.js";
 import CardBody from "components/Card/CardBody.js";
 import CardHeader from "components/Card/CardHeader.js";
-import ViewProductModal from "./ViewProductModal";
-import EditProductModal from "./EditProductModal";
+import ViewProductModal from "components/Modals/ViewProductModal";
+import EditProductModal from "components/Modals/EditProductModal";
+import ProductsDeleteDialog from "components/Modals/ProductsDeleteDialog";
 import productService from "services/product.service";
-
-// New modular components
-import ProductsTable from "./ProductsTable";
-import ProductsToolbar from "./ProductsToolbar";
-import ProductsDeleteDialog from "./ProductsDeleteDialog";
-import { highlightSearchMatch } from "./ProductsUtility";
+import ProductsTable from "components/Tables/ProductsTable";
+import ProductsToolbar from "components/Tools/ProductsToolbar";
+import { highlightSearchMatch } from "components/Utils/ProductsUtility";
 
 const Products = ({ 
     title, captions = [], data = [], loading = false, error = null, 
