@@ -137,12 +137,17 @@ const authService = {
   refreshToken: async () => {
     try {
       const csrfRefreshToken = getCookie('csrf_refresh_token');
-
+  
+      if (!csrfRefreshToken) {
+        console.error('No CSRF refresh token found');
+        return false;
+      }
+  
       // Use direct axios call to avoid circular dependency with api instance
-      const response = await axios({
+      await axios({
         method: 'post',
         url: `${getApiBaseUrl()}/auth/refresh`,
-        withCredentials: true, // Important for cookies
+        withCredentials: true,
         headers: {
           'Content-Type': 'application/json',
           'X-CSRF-TOKEN': csrfRefreshToken
@@ -153,16 +158,15 @@ const authService = {
       const storedUserData = localStorage.getItem('user');
       if (storedUserData) {
         const userData = JSON.parse(storedUserData);
-        
         const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
-        
+        expiresAt.setDate(expiresAt.getDate() + 7);
         userData.expiresAt = expiresAt.getTime();
         localStorage.setItem('user', JSON.stringify(userData));
       }
       
       return true;
     } catch (error) {
+      console.error('Token refresh failed');
       return false;
     }
   },
