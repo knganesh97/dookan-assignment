@@ -193,7 +193,7 @@ def update_product(product_id):
             create_event(
                 user_id=user_id,
                 user_name=user_name,
-                product_id=mongo_product._id,
+                product_id=str(mongo_product._id),
                 product_title=mongo_product.title,
                 event_type='update'
             )
@@ -249,7 +249,7 @@ def delete_product(product_id):
             create_event(
                 user_id=user_id,
                 user_name=user_name,
-                product_id=mongo_product._id,
+                product_id=str(mongo_product._id),
                 product_title=mongo_product.title,
                 event_type='delete'
             )
