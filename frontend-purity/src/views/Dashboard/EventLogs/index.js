@@ -44,7 +44,8 @@ function EventLogs() {
 
     return (
         <Flex direction='column' pt={{ base: "120px", md: "75px" }}>
-            <Events 
+            <Events
+                title="Event Logs"
                 events={events}
                 loading={loading}
                 error={error}

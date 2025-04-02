@@ -3,7 +3,7 @@ import EventsToolbar from "components/Tools/EventsToolbar";
 import Card from "components/Card/Card";
 import CardHeader from "components/Card/CardHeader";
 import CardBody from "components/Card/CardBody";
-import { Flex, Text } from "@chakra-ui/react";
+import { Flex, Text, useColorModeValue } from "@chakra-ui/react";
 
 const Events = ({
     pageNumber,
@@ -12,24 +12,28 @@ const Events = ({
     setPerPage,
     events,
     loading,
-    totalCount
+    totalCount,
+    title
 }) => {
     const captions = ["ID", "User Name", "User ID", "Product Title", "Product ID", "Event Type", "Timestamp"];
     const hasMorePages = totalCount > perPage;
+    const textColor = useColorModeValue("gray.700", "white");
 
     return (
         <Card>
             <CardHeader>
-                <Flex justify='space-between' align='center'>
-                    <Text fontSize='lg' fontWeight='bold'>Event Logs</Text>
+                <Flex direction='column'>
+                    <Text fontSize='lg' color={textColor} fontWeight='bold' pb='.5rem'>
+                        {title}
+                    </Text>
+                    <EventsToolbar 
+                        pageNumber={pageNumber}
+                        perPage={perPage}
+                        setPageNumber={setPageNumber}
+                        setPerPage={setPerPage}
+                        hasMorePages={hasMorePages}
+                    />
                 </Flex>
-                <EventsToolbar 
-                    pageNumber={pageNumber}
-                    perPage={perPage}
-                    setPageNumber={setPageNumber}
-                    setPerPage={setPerPage}
-                    hasMorePages={hasMorePages}
-                />
             </CardHeader>
             <CardBody>
                 <EventsTable 
