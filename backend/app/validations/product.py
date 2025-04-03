@@ -140,8 +140,8 @@ class ProductValidator:
             parsed = urlparse(url)
             if not parsed.scheme or not parsed.netloc:
                 errors.append("Invalid URL format")
-            elif parsed.netloc not in rules['allowed_domains']:
-                errors.append(f"Image URL must be from one of: {', '.join(rules['allowed_domains'])}")
+            # elif parsed.netloc not in rules['allowed_domains']:
+            #     errors.append(f"Image URL must be from one of: {', '.join(rules['allowed_domains'])}")
         except Exception:
             errors.append("Invalid URL format")
             
