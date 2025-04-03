@@ -27,6 +27,20 @@ const eventsService = {
     } catch (error) {
       throw error;
     }
+  },
+
+  getDailyCounts: async (params) => {
+    const queryParams = {
+      ...(params.days && { days: params.days })
+    };
+
+    try {
+      const queryString = new URLSearchParams(queryParams).toString();
+      const response = await api.get(`/events/daily-counts?${queryString}`);
+      return response;
+    } catch (error) {
+      throw error;
+    }
   }
 };
 

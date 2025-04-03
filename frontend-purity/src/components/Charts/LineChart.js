@@ -1,35 +1,40 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import ReactApexChart from "react-apexcharts";
-import { lineChartData, lineChartOptions } from "variables/charts";
+import { lineChartOptions } from "variables/charts";
 
-class LineChart extends React.Component {
-  constructor(props) {
-    super(props);
+const LineChart = ({ chartData: propChartData, dates }) => {
+  const [chartState, setChartState] = useState({
+    chartData: [],
+    chartOptions: {}
+  });
 
-    this.state = {
-      chartData: [],
-      chartOptions: {},
-    };
-  }
+  useEffect(() => {
+    const formattedData = [{
+      name: "Events",
+      data: propChartData || []
+    }];
 
-  componentDidMount() {
-    this.setState({
-      chartData: lineChartData,
-      chartOptions: lineChartOptions,
+    setChartState({
+      chartData: formattedData,
+      chartOptions: {
+        ...lineChartOptions,
+        xaxis: {
+          ...lineChartOptions.xaxis,
+          categories: dates || []
+        }
+      }
     });
-  }
+  }, [propChartData, dates]);
 
-  render() {
-    return (
-      <ReactApexChart
-        options={this.state.chartOptions}
-        series={this.state.chartData}
-        type="area"
-        width="100%"
-        height="100%"
-      />
-    );
-  }
-}
+  return (
+    <ReactApexChart
+      options={chartState.chartOptions}
+      series={chartState.chartData}
+      type="area"
+      width="100%"
+      height="100%"
+    />
+  );
+};
 
 export default LineChart;

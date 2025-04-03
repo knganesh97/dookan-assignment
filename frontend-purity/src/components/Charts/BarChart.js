@@ -1,45 +1,51 @@
-import React, { Component } from "react";
+import React, { useState, useEffect } from "react";
 import Card from "components/Card/Card";
 import Chart from "react-apexcharts";
-import { barChartData, barChartOptions } from "variables/charts";
+import { barChartOptions } from "variables/charts";
 
-class BarChart extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      chartData: [],
-      chartOptions: {},
-    };
-  }
+const BarChart = ({ chartData: propChartData, dates }) => {
+  const [chartState, setChartState] = useState({
+    chartData: [],
+    chartOptions: {}
+  });
 
-  componentDidMount() {
-    this.setState({
-      chartData: barChartData,
-      chartOptions: barChartOptions,
+  useEffect(() => {
+    const formattedData = [{
+      name: "Events",
+      data: propChartData || []
+    }];
+
+    setChartState({
+      chartData: formattedData,
+      chartOptions: {
+        ...barChartOptions,
+        xaxis: {
+          ...barChartOptions.xaxis,
+          categories: dates || []
+        }
+      }
     });
-  }
+  }, [propChartData, dates]);
 
-  render() {
-    return (
-      <Card
-        py="1rem"
-        height={{ sm: "200px" }}
-        width="100%"
-        bg="linear-gradient(81.62deg, #313860 2.25%, #151928 79.87%)"
-        position="relative"
-      >
-        {this.state.chartData.length > 0 && this.state.chartOptions && (
-          <Chart
-            options={this.state.chartOptions}
-            series={this.state.chartData}
-            type="bar"
-            width="100%"
-            height="100%"
-          />
-        )}
-      </Card>
-    );
-  }
-}
+  return (
+    <Card
+      py="1rem"
+      height={{ sm: "200px" }}
+      width="100%"
+      bg="linear-gradient(81.62deg, #313860 2.25%, #151928 79.87%)"
+      position="relative"
+    >
+      {chartState.chartData.length > 0 && chartState.chartOptions && (
+        <Chart
+          options={chartState.chartOptions}
+          series={chartState.chartData}
+          type="bar"
+          width="100%"
+          height="100%"
+        />
+      )}
+    </Card>
+  );
+};
 
 export default BarChart;
