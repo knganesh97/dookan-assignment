@@ -1,6 +1,6 @@
 from flask import current_app
 from datetime import datetime, timezone, timedelta
-from sqlalchemy import and_, desc
+from sqlalchemy import and_, desc, func, cast, Date
 from ..models.event import Event
 from .. import db
 
@@ -175,4 +175,69 @@ def bulk_delete_old_events(days=30):
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Failed to bulk delete events: {str(e)}")
+        raise
+
+def get_daily_event_counts(days=30):
+    """
+    Get daily counts of events by event_type for the specified number of past days
+    
+    Args:
+        days (int): Number of past days to analyze (default: 30)
+        
+    Returns:
+        dict: Dictionary containing:
+            - dates: List of dates in YYYY-MM-DD format
+            - event_types: List of unique event types found
+            - counts: Dictionary with event_type keys, each containing a list of daily counts
+    """
+    try:
+        # Calculate the start date (30 days ago from now)
+        start_date = datetime.now(timezone.utc) - timedelta(days=days)
+        
+        # Query to get counts grouped by date and event_type
+        results = db.session.query(
+            cast(Event.timestamp, Date).label('date'),
+            Event.event_type,
+            func.count(Event.id).label('count')
+        ).filter(
+            Event.timestamp >= start_date
+        ).group_by(
+            cast(Event.timestamp, Date),
+            Event.event_type
+        ).order_by(
+            cast(Event.timestamp, Date)
+        ).all()
+        
+        # Process results into the desired format
+        dates_set = set()
+        event_types_set = set()
+        counts_by_type = {}
+        
+        # First pass: collect all unique dates and event types
+        for date, event_type, count in results:
+            dates_set.add(date.strftime('%Y-%m-%d'))
+            event_types_set.add(event_type)
+        
+        # Convert sets to sorted lists
+        dates = sorted(list(dates_set))
+        event_types = sorted(list(event_types_set))
+        
+        # Initialize counts dictionary with zeros
+        for event_type in event_types:
+            counts_by_type[event_type] = [0] * len(dates)
+        
+        # Fill in the actual counts
+        date_to_index = {date: i for i, date in enumerate(dates)}
+        for date, event_type, count in results:
+            date_str = date.strftime('%Y-%m-%d')
+            index = date_to_index[date_str]
+            counts_by_type[event_type][index] = count
+        
+        return {
+            'dates': dates,
+            'event_types': event_types,
+            'counts': counts_by_type
+        }
+    except Exception as e:
+        current_app.logger.error(f"Failed to get daily event counts: {str(e)}")
         raise 

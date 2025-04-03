@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required
 from datetime import datetime, timezone, timedelta
-from ..helpers.postgres_helpers import get_user_events, get_events_by_timerange
+from ..helpers.postgres_helpers import get_user_events, get_events_by_timerange, get_daily_event_counts
 from ..helpers.mongo_helpers import get_mongo_users_name_and_id
 from .. import db
 
@@ -85,4 +85,30 @@ def get_users_list():
     except Exception as e:
         current_app.logger.error(f"Failed to retrieve users list: {str(e)}")
         return jsonify({'error': 'Failed to retrieve users list'}), 500
+
+@events_bp.route('/daily-counts', methods=['GET'])
+@jwt_required()
+def get_events_daily_counts():
+    """
+    Get daily counts of events grouped by event type for the last N days
+    """
+    try:
+        # Get the number of days from query parameters, default to 30
+        days = int(request.args.get('days', 30))
+        
+        # Validate the days parameter
+        if days <= 0:
+            return jsonify({'error': 'Days parameter must be positive'}), 400
+        if days > 365:  # Set a reasonable maximum
+            return jsonify({'error': 'Days parameter cannot exceed 365'}), 400
+            
+        # Get the daily counts using our helper function
+        result = get_daily_event_counts(days=days)
+        
+        return jsonify(result)
+    except ValueError:
+        return jsonify({'error': 'Invalid days parameter'}), 400
+    except Exception as e:
+        current_app.logger.error(f"Error fetching daily event counts: {str(e)}")
+        return jsonify({'error': 'Failed to fetch daily event counts'}), 500
     
