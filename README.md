@@ -6,26 +6,23 @@ A full-stack application with Flask backend and React frontend, featuring authen
 
 ```
 dookan-assignment/
-├── backend/             # Flask backend
-│   ├── app/             # Application code
-│   │   ├── models/      # Database models
-│   │   ├── routes/      # API endpoints
-│   │   ├── helpers/     # Helper functions
-│   │   ├── validations/ # Input validation
-│   ├── .env.example     # Environment variables template
-│   ├── requirements.txt # Python dependencies
-│   ├── run.py           # Application entry point
-│   └── Dockerfile       # Backend Docker configuration
-├── frontend-purity/     # React frontend with Purity UI
-│   ├── src/             # Source code
-│   │   ├── components/  # UI components
-│   │   ├── layouts/     # Page layouts
-│   │   ├── services/    # API service calls
-│   │   ├── views/       # Page views
-│   │   └── utils/       # Utility functions
-│   ├── public/          # Static files
-│   └── Dockerfile       # Frontend Docker configuration
-└── docker-compose.yml   # Docker Compose configuration
+├── backend/                # Flask backend
+│   ├── app/               # Application code
+│   ├── requirements.txt   # Python dependencies
+│   ├── run.py            # Application entry point
+│   ├── Dockerfile        # Backend Docker configuration
+│   ├── .env              # Environment variables
+│   ├── .env.example      # Environment variables template
+│   ├── cert.pem          # SSL certificate
+│   └── key.pem           # SSL private key
+├── frontend-purity/       # React frontend with Purity UI
+│   ├── src/              # Source code
+│   ├── public/           # Static files
+│   ├── node_modules/     # Dependencies
+│   ├── package.json      # NPM package configuration
+│   ├── Dockerfile        # Frontend Docker configuration
+│   └── .env              # Environment variables
+└── docker-compose.yml     # Docker Compose configuration
 ```
 
 ## Features
@@ -33,7 +30,7 @@ dookan-assignment/
 - Authentication system with JWT
 - MongoDB and PostgreSQL integration
 - Shopify GraphQL API integration
-- Data visualization with Plotly
+- Data visualization with ApexCharts
 - Event logging system
 - Modern UI with Chakra UI and Purity UI Dashboard
 
@@ -41,7 +38,7 @@ dookan-assignment/
 
 ### Prerequisites
 
-- Node.js and npm
+- Node.js 16.x
 - Python 3.8+
 - MongoDB
 - PostgreSQL
@@ -125,17 +122,23 @@ ENV=development
 
 ### Backend
 - Flask 3.0.2
-- Flask-JWT-Extended for authentication
-- SQLAlchemy for PostgreSQL ORM
-- PyMongo for MongoDB connection
-- Plotly for data visualization
+- Flask-JWT-Extended 4.6.0
+- Flask-SQLAlchemy 3.1.1
+- Flask-CORS 4.0.0
+- Flask-Bcrypt 1.0.1
+- PyMongo 4.6.2
+- Pandas 2.2.1
+- Python-dotenv 1.0.1
 
 ### Frontend
 - React 16.14.0
-- Chakra UI for components
-- Purity UI Dashboard template
-- Axios for API requests
-- ApexCharts for data visualization
+- Chakra UI 1.8.8
+- Emotion/React 11.8.1
+- ApexCharts 3.27.3 (Data Visualization)
+- Axios 1.6.7
+- React Router DOM 5.2.1
+- React Table 7.7.0
+- Framer Motion 4.1.17
 
 ## API Documentation
 
@@ -153,4 +156,8 @@ Run frontend tests:
 ```bash
 cd frontend-purity
 npm test
-``` 
+```
+
+## License
+
+This project includes components from Purity UI Dashboard which has its own license terms. Please refer to LICENSE.md in the frontend-purity directory for more details. 
