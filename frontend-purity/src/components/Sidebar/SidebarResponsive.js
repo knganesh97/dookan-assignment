@@ -46,6 +46,12 @@ function SidebarResponsive(props) {
           return null;
         }
         if (prop.category) {
+          // Filter out auth routes from views
+          const nonAuthViews = prop.views.filter(view => view.layout !== '/auth');
+          if (nonAuthViews.length === 0) {
+            return null;
+          }
+          
           var st = {};
           st[prop["state"]] = !state[prop.state];
           return (
@@ -67,9 +73,13 @@ function SidebarResponsive(props) {
                   ? prop.rtlName
                   : prop.name}
               </Text>
-              {createLinks(prop.views)}
+              {createLinks(nonAuthViews)}
             </div>
           );
+        }
+        // Skip auth routes
+        if (prop.layout === '/auth') {
+          return null;
         }
         return (
           <NavLink to={prop.layout + prop.path} key={prop.name}>

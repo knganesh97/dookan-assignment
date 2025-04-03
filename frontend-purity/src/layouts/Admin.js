@@ -73,7 +73,12 @@ export default function Dashboard(props) {
 				return getRoutes(prop.views);
 			}
 			if (prop.category === 'account') {
-				return getRoutes(prop.views);
+				// Filter out auth routes from account category
+				const nonAuthViews = prop.views.filter(view => view.layout !== '/auth');
+				if (nonAuthViews.length > 0) {
+					return getRoutes(nonAuthViews);
+				}
+				return null;
 			}
 			if (prop.layout === '/admin') {
 				return <Route path={prop.layout + prop.path} component={prop.component} key={key} />;
